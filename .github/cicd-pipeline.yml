@@ -4,6 +4,7 @@ on:
     branches:
       - main
       - dev
+      - feature/magezi-cicd
       - staging
   pull_request:
     branches:
