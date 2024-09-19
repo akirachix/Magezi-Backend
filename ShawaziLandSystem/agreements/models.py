@@ -1,11 +1,13 @@
 from django.db import models
 from django.contrib.auth.models import User
+from landDetails.models import LandDetails
 from datetime import datetime
 import hashlib
 import json
    
 class Agreements(models.Model):
     agreement_id = models.AutoField(primary_key=True)
+    LandDetail = models.ForeignKey(LandDetails, related_name='land_detail', on_delete=models.CASCADE) 
     seller = models.ForeignKey(LandSeller, related_name='drafted_contracts_as_seller', on_delete=models.CASCADE)
     buyer = models.ForeignKey(LandBuyer, related_name='drafted_contracts_as_buyer', on_delete=models.CASCADE)
     lawyer = models.ForeignKey(Lawyer, related_name='drafted_contracts_as_lawyer', on_delete=models.CASCADE)

@@ -1,5 +1,4 @@
 from rest_framework import serializers
-<<<<<<< HEAD
 from landDetails.models import LandDetails
 from django.conf import settings
 
@@ -29,7 +28,6 @@ class LandDetailSerializer(serializers.ModelSerializer):
         if obj.date_purchased:
             history['date_purchased'] = obj.date_purchased
         return history if history else None
-=======
 from agreements.models import Agreements
 
 class AgreementsSerializer(serializers.ModelSerializer):
@@ -37,4 +35,3 @@ class AgreementsSerializer(serializers.ModelSerializer):
         model = Agreements
         fields = '__all__'
         
->>>>>>> origin/dev
