@@ -1,5 +1,6 @@
 # Virtual environment (if applicable)
 venv/
+env/
 # Django
 db.sqlite3
 __pycache__/
