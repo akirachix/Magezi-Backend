@@ -5,6 +5,10 @@ from rest_framework.exceptions import NotFound
 from landDetails.models import LandDetails
 from .serializers import LandDetailSerializer
 from landDetails.maps import LandMapSerializer
+from .models import Agreements
+from rest_framework import status
+from rest_framework.views import APIView
+from rest_framework.response import Response
 
 
 
@@ -107,10 +111,7 @@ class LandMapDetailView(APIView):
         
         serializer = LandMapSerializer(land_detail, context={'request': request})
         return Response(serializer.data)
-from agreements.models import Agreements
-from rest_framework import status
-from rest_framework.views import APIView
-from rest_framework.response import Response
+
 
 class AgreementsView(APIView):
 
@@ -127,7 +128,6 @@ class AgreementsView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class AgreementDetailView(APIView):
-
     def get_object(self, id):
         try:
             return Agreements.objects.get(agreement_id=id)  # Use the correct field name
