@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -43,6 +44,7 @@ INSTALLED_APPS = [
     'api',
     'agreements',
     'rest_framework',
+    'landDetails',
 ]
 
 MIDDLEWARE = [
@@ -136,3 +138,6 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+OPENSTREETMAP_API_TOKEN = os.getenv('OPENSTREETMAP_API_TOKEN')
+
