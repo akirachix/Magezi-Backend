@@ -6,9 +6,9 @@ import json
    
 class Agreements(models.Model):
     agreement_id = models.AutoField(primary_key=True)
-    # seller = models.ForeignKey(LandSeller, related_name='drafted_contracts_as_seller', on_delete=models.CASCADE)
-    # buyer = models.ForeignKey(LandBuyer, related_name='drafted_contracts_as_buyer', on_delete=models.CASCADE)
-    # lawyer = models.ForeignKey(Lawyer, related_name='drafted_contracts_as_lawyer', on_delete=models.CASCADE)
+    seller = models.ForeignKey(LandSeller, related_name='drafted_contracts_as_seller', on_delete=models.CASCADE)
+    buyer = models.ForeignKey(LandBuyer, related_name='drafted_contracts_as_buyer', on_delete=models.CASCADE)
+    lawyer = models.ForeignKey(Lawyer, related_name='drafted_contracts_as_lawyer', on_delete=models.CASCADE)
     date_created = models.DateField(auto_now_add=True)
     contract_duration = models.PositiveSmallIntegerField()
     agreed_amount = models.PositiveIntegerField()
@@ -25,7 +25,7 @@ class Agreements(models.Model):
     previous_hash = models.CharField(max_length=64, blank=True, null=True) 
     transactions_history = models.JSONField(default=list, blank=True)
 
-    # blockchain = Blockchain()
+    blockchain = Blockchain()
 
     def generate_hash(self, transaction_data):
         transaction_string = json.dumps(transaction_data, sort_keys=True).encode()

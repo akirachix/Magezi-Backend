@@ -31,12 +31,11 @@ class AgreementDetailView(APIView):
             serializer = AgreementsSerializer(agreement)
             return Response(serializer.data)
         return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
-    
 
-    # def put(self, request, id):
-    #     agreement = self.get_object(id)
-    #     if agreement is not None:
+    def put(self, request, id):
+        agreement = self.get_object(id)
+        if agreement is not None:
 
-    #         if hasattr(request.user, 'lawyer'):
-    #             serializer = AgreementsSerializer(agreement, data=request.data)
-    #             if serializer.is_valid():
+            if hasattr(request.user, 'lawyer'):
+                serializer = AgreementsSerializer(agreement, data=request.data)
+                if serializer.is_valid():
