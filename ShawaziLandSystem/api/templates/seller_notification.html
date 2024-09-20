@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Notifications</title>
+</head>
+<body>
+    <h1>Notifications</h1>
+    <ul>
+        {% for message in notifications %}
+            <li>{{ message }}</li>
+        {% empty %}
+            <li>No new notifications.</li>
+        {% endfor %}
+    </ul>
+    <a href="{% url 'property_list' %}">Back to Property Listings</a>
+</body>
+</html>
