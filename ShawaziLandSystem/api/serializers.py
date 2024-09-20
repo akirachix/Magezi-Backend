@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from landDetails.models import LandDetails
+from transactions.models import Transactions
 from agreements.models import Agreements
 from django.conf import settings
 
@@ -34,4 +35,10 @@ class AgreementsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Agreements
         fields = '__all__'
+class TransactionsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transactions
+        fields = '__all__'
+class BlockchainValidationSerializer(serializers.Serializer):
+    validation_result = serializers.CharField()
         

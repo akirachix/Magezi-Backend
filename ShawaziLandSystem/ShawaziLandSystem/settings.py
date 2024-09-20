@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'agreements',
     'rest_framework',
     'landDetails',
+    'transactions'
 ]
 
 MIDDLEWARE = [
