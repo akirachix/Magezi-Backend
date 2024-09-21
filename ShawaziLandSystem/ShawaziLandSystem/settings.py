@@ -40,12 +40,15 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'daphne',
     'django.contrib.staticfiles',
     'api',
     'agreements',
     'rest_framework',
     'landDetails',
     'transactions'
+    'chatroom',
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -77,6 +80,13 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'ShawaziLandSystem.wsgi.application'
+ASGI_APPLICATION = 'ShawaziLandSystem.asgi.application'
+CHANNEL_LAYERS = {
+   
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"},
+}
+
 
 
 # Database
