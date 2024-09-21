@@ -21,6 +21,10 @@ urlpatterns = [
     path("property/<int:land_id>/", NotificationsListView.as_view(), name='property_details'),
     path('interested/', SellerNotificationView.as_view(), name='seller_notifications'),
     path('properties/', PropertyListView.as_view(), name='property_list'),
+    path('', Index_View, name='index'),
+    path('login/', Login_View, name='login'),
+    path('create-room/', Create_Room, name='create_room'),
+    path('room/<str:room_name>/', Message_View, name='messages'),
   
 ]
 

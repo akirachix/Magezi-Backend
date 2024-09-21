@@ -42,3 +42,4 @@ class TransactionsSerializer(serializers.ModelSerializer):
 class BlockchainValidationSerializer(serializers.Serializer):
     validation_result = serializers.CharField()
         
+
