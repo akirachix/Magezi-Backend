@@ -3,3 +3,6 @@ Django==5.1.1
 psycopg2-binary==2.9.9
 sqlparse==0.5.1
 typing_extensions==4.12.2
+channels ==4.1.0
+daphne ==4.1.2
+
