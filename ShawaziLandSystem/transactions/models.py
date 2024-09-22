@@ -16,7 +16,7 @@ class Transactions(models.Model):
         ('Approved', 'Approved'),
         ('Rejected', 'Rejected')
     ], default='Pending')
-    agreement_id = models.ForeignKey(
+    agreement = models.ForeignKey(
         'agreements.Agreements',
         on_delete=models.CASCADE,
         related_name='transactions',
@@ -41,7 +41,7 @@ class Transactions(models.Model):
 
         print("Checking for existing transactions...")
         existing_transactions = Transactions.objects.filter(
-            agreement=self.agreement_id,
+            agreement=self.agreement,
             unique_code=self.unique_code,
             amount=self.amount,
             date=self.date
@@ -54,15 +54,15 @@ class Transactions(models.Model):
     def save(self, *args, **kwargs):
         self.clean()
 
-        if self.agreement_id.transactions.exists():
-            last_transaction = self.agreement_id.transactions.last()
+        if self.agreement.transactions.exists():
+            last_transaction = self.agreement.transactions.last()
             self.previous_hash = last_transaction.current_hash
 
         self.current_hash = self.generate_hash()
 
         super().save(*args, **kwargs)
 
-        self.agreement_id.update_on_transaction(self.amount)
+        self.agreement.update_on_transaction(self.amount)
 
     def generate_hash(self):
         transaction_string = f"{self.unique_code}{self.amount}{self.date.isoformat() if self.date else ''}{self.status}{self.previous_hash or ''}"
@@ -72,11 +72,11 @@ class Transactions(models.Model):
         transaction_data = {
             'amount': self.amount,
             'timestamp': self.date.isoformat() if self.date else None,
-            'transaction_count': self.agreement_id.transactions.count() + 1,  
+            'transaction_count': self.agreement.transactions.count() + 1,  
         }
         
-        if not hasattr(self.agreement_id, 'transactions_history'):
-            self.agreement_id.transactions_history = []
-        self.agreement_id.transactions_history.append(transaction_data)
-        self.agreement_id.save(update_fields=['transactions_history'])
+        if not hasattr(self.agreement, 'transactions_history'):
+            self.agreement.transactions_history = []
+        self.agreement.transactions_history.append(transaction_data)
+        self.agreement.save(update_fields=['transactions_history'])
 

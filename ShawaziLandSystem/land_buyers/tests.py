@@ -1,6 +1,3 @@
-# okay
-
-
 from django.test import TestCase
 from django.db import IntegrityError
 from users.models import CustomUser
