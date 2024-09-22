@@ -2,7 +2,7 @@ import json
 import asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-from ChatApp.models import *
+from chatroom.models import *
 
 
 class ChatConsumer(AsyncWebsocketConsumer):

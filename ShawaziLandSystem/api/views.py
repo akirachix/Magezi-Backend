@@ -30,6 +30,7 @@ from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.contrib.auth import logout,get_user_model
 from django.utils import timezone
+from chatroom.models import Room, Message
 from rest_framework import generics, status
 from rest_framework.decorators import api_view
 from django.contrib.auth.models import Permission
@@ -587,14 +588,6 @@ class TransactionsListView(APIView):
         else:
             return Response({"error": "Could not extract all required information from the image"}, status=status.HTTP_400_BAD_REQUEST)
         
-
-
-       
-        
-
-    
-
-
 class TransactionsDetailView(APIView):
     def get(self,request,id):
             transactionss = Transactions.objects.get(id=id)
@@ -667,7 +660,7 @@ def Create_Room(request):
     if request.method == 'POST':
         room_name = request.POST.get('room')
         if room_name:
-            room, created = Room.objects.get_or_create(room_name=room_name)
+            room_name, created = Room.objects.get_or_create(room_name=room_name)
             return redirect('messages', room_name=room_name) 
     return render(request, 'index.html')
 
