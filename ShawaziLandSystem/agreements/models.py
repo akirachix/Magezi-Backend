@@ -1,16 +1,22 @@
 from django.db import models
-from django.contrib.auth.models import User
 from landDetails.models import LandDetails
 from datetime import datetime
 import hashlib
 import json
+
+from land_buyers.models import LandBuyer
+from land_sellers.models import LandSeller
+from lawyers.models import Lawyer
+from transactions.blockchain import Blockchain
+from users.models import CustomUser
    
 class Agreements(models.Model):
     agreement_id = models.AutoField(primary_key=True)
-    LandDetail = models.ForeignKey(LandDetails, related_name='land_detail', on_delete=models.CASCADE) 
-    seller = models.ForeignKey(LandSeller, related_name='drafted_contracts_as_seller', on_delete=models.CASCADE)
-    buyer = models.ForeignKey(LandBuyer, related_name='drafted_contracts_as_buyer', on_delete=models.CASCADE)
-    lawyer = models.ForeignKey(Lawyer, related_name='drafted_contracts_as_lawyer', on_delete=models.CASCADE)
+    LandDetail = models.ForeignKey(LandDetails,on_delete=models.CASCADE, null=True,blank=True,related_name='agreements' )
+    seller = models.ForeignKey(CustomUser,on_delete=models.SET_NULL,null=True,blank=True,related_name='agreements_as_seller')
+    buyer = models.ForeignKey(CustomUser,on_delete=models.SET_NULL,null=True,blank=True,related_name='agreements_as_buyer')
+    lawyer = models.ForeignKey(CustomUser,on_delete=models.SET_NULL,null=True,blank=True,related_name='agreements_as_lawyer')
+
     date_created = models.DateField(auto_now_add=True)
     contract_duration = models.PositiveSmallIntegerField()
     agreed_amount = models.PositiveIntegerField()

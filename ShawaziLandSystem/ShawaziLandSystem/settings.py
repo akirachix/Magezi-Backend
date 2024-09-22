@@ -46,9 +46,13 @@ INSTALLED_APPS = [
     'agreements',
     'rest_framework',
     'landDetails',
-    'transactions'
+    'transactions',
     'chatroom',
     'channels',
+    'users',
+    'land_buyers',
+    'land_sellers',
+    'lawyers',
 ]
 
 MIDDLEWARE = [
@@ -94,6 +98,7 @@ CHANNEL_LAYERS = {
 
 
 load_dotenv()
+GOOGLE_APPLICATION_CREDENTIALS = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
 
 DATABASES = {
      'default': {
@@ -133,7 +138,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Africa/Nairobi'
 
 USE_I18N = True
 
@@ -151,4 +156,14 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 OPENSTREETMAP_API_TOKEN = os.getenv('OPENSTREETMAP_API_TOKEN')
+
+SMSLEOPARD_API_URL = os.getenv('SMSLEOPARD_API_URL')
+SMSLEOPARD_ACCESS_TOKEN = os.getenv('SMSLEOPARD_ACCESS_TOKEN')
+
+
+AUTH_USER_MODEL = 'users.CustomUser'
+
+
+
+
 

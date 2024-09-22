@@ -1,8 +1,11 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from agreements.models import Agreements
+from landDetails.models import LandDetails
 from transactions.blockchain import Blockchain
 import hashlib
+
+from users.models import CustomUser
 
 class Transactions(models.Model):
     unique_code = models.CharField(max_length=50)
@@ -21,6 +24,13 @@ class Transactions(models.Model):
         blank=False,
         limit_choices_to={'is_active': True}
     )
+
+    LandDetail = models.ForeignKey(LandDetails,on_delete=models.CASCADE, null=True,blank=True,related_name='land' )
+    seller = models.ForeignKey(CustomUser,on_delete=models.SET_NULL,null=True,blank=True,related_name='transactions_as_seller')
+    buyer = models.ForeignKey(CustomUser,on_delete=models.SET_NULL,null=True,blank=True,related_name='transactions_as_buyer')
+    lawyer = models.ForeignKey(CustomUser,on_delete=models.SET_NULL,null=True,blank=True,related_name='transactions_as_lawyer')
+
+
     blockchain = Blockchain()
     previous_hash = models.CharField(max_length=64, blank=True, null=True)
     current_hash = models.CharField(max_length=64, blank=True, null=True)
