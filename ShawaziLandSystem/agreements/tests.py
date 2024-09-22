@@ -1,12 +1,11 @@
+# Okay
+
+
 from unittest.mock import MagicMock
 from django.test import TestCase
 from .models import Agreements
 import hashlib
 import json
-from datetime import datetime
-
-from django.test import TestCase
-from agreements.models import Agreements
 from datetime import datetime
 
 class AgreementsModelTest(TestCase):
@@ -23,26 +22,24 @@ class AgreementsModelTest(TestCase):
         # Save to generate agreement_hash
         self.agreement.save()
 
-def generate_agreement_hash(self):
-    if not self.pk:
-        raise ValueError("Agreement must be saved before generating a hash.")
+    def generate_agreement_hash(self):
+        if not self.pk:
+            raise ValueError("Agreement must be saved before generating a hash.")
 
-    agreement_data = {
-        'date_created': self.date_created.isoformat(),
-        'contract_duration': self.contract_duration,
-        'agreed_amount': self.agreed_amount,
-        'installment_schedule': self.installment_schedule,
-        'penalties_interest_rate': self.penalties_interest_rate,
-        'down_payment': self.down_payment,
-        'buyer_agreed': self.buyer_agreed,
-        'seller_agreed': self.seller_agreed,
-        'unique_id': self.pk,
-        'terms_and_conditions': self.terms_and_conditions,
-        'timestamp': datetime.now().isoformat(),
-    }
-    return hashlib.sha256(json.dumps(agreement_data, sort_keys=True).encode()).hexdigest()
-
-
+        agreement_data = {
+            'date_created': self.date_created.isoformat(),
+            'contract_duration': self.contract_duration,
+            'agreed_amount': self.agreed_amount,
+            'installment_schedule': self.installment_schedule,
+            'penalties_interest_rate': self.penalties_interest_rate,
+            'down_payment': self.down_payment,
+            'buyer_agreed': self.buyer_agreed,
+            'seller_agreed': self.seller_agreed,
+            'unique_id': self.pk,
+            'terms_and_conditions': self.terms_and_conditions,
+            'timestamp': datetime.now().isoformat(),
+        }
+        return hashlib.sha256(json.dumps(agreement_data, sort_keys=True).encode()).hexdigest()
 
     def test_update_on_transaction(self):
         """Test that updating on transaction updates fields correctly."""
@@ -73,4 +70,3 @@ def generate_agreement_hash(self):
 
         # Check that the transaction was added to the blockchain
         self.agreement.blockchain.add_transaction.assert_called_once()
-

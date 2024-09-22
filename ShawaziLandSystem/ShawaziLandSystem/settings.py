@@ -46,9 +46,13 @@ INSTALLED_APPS = [
     'agreements',
     'rest_framework',
     'landDetails',
-    'transactions'
+    'transactions',
     'chatroom',
     'channels',
+    'users',
+    'land_buyers',
+    'land_sellers',
+    'lawyers',
 ]
 
 MIDDLEWARE = [
@@ -95,18 +99,23 @@ CHANNEL_LAYERS = {
 
 load_dotenv()
 
+# DATABASES = {
+#      'default': {
+#        'ENGINE': 'django.db.backends.postgresql',
+#          'NAME': os.getenv('DATABASE_NAME'),
+#         'USER': os.getenv('DATABASE_USER'),
+#         'PASSWORD': os.getenv('DATABASE_PASSWORD'),
+#         'HOST':os.getenv('DATABASE_HOST'),
+#         'PORT': os.getenv('DATABASE_PORT'),
+#     }
+# }
+
 DATABASES = {
-     'default': {
-       'ENGINE': 'django.db.backends.postgresql',
-         'NAME': os.getenv('DATABASE_NAME'),
-        'USER': os.getenv('DATABASE_USER'),
-        'PASSWORD': os.getenv('DATABASE_PASSWORD'),
-        'HOST':os.getenv('DATABASE_HOST'),
-        'PORT': os.getenv('DATABASE_PORT'),
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 }
-
-
 
 
 # Password validation
@@ -133,7 +142,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Africa/Nairobi'
 
 USE_I18N = True
 
@@ -151,4 +160,15 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 OPENSTREETMAP_API_TOKEN = os.getenv('OPENSTREETMAP_API_TOKEN')
+
+SMSLEOPARD_API_URL = 'https://api.smsleopard.com/v1/sms/send'
+SMSLEOPARD_ACCESS_TOKEN = 'alA4aXRHVHc2OG9QUGF2a0dxYVc6M01pSldhYUhDMlF2eVdnNHdYZnpNUjMzQzZZeFNNTVUyQmN4aEhuYg=='
+
+LOGIN_REDIRECT_URL = 'home'
+LOGOUT_REDIRECT_URL = 'home'
+
+AUTH_USER_MODEL = 'users.CustomUser'
+# AUTH_USER_MODEL = 'chatroom.YourCustomUserModel'
+
+
 
