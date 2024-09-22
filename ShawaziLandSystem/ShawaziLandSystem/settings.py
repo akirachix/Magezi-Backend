@@ -157,7 +157,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 OPENSTREETMAP_API_TOKEN = os.getenv('OPENSTREETMAP_API_TOKEN')
 
-SMSLEOPARD_API_URL = 'https://api.smsleopard.com/v1/sms/send'
+SMSLEOPARD_API_URL = os.getenv('SMSLEOPARD_API_URL')
 SMSLEOPARD_ACCESS_TOKEN = os.getenv('SMSLEOPARD_ACCESS_TOKEN')
 
 
