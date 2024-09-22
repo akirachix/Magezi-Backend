@@ -158,13 +158,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 OPENSTREETMAP_API_TOKEN = os.getenv('OPENSTREETMAP_API_TOKEN')
 
 SMSLEOPARD_API_URL = 'https://api.smsleopard.com/v1/sms/send'
-SMSLEOPARD_ACCESS_TOKEN = 'alA4aXRHVHc2OG9QUGF2a0dxYVc6M01pSldhYUhDMlF2eVdnNHdYZnpNUjMzQzZZeFNNTVUyQmN4aEhuYg=='
+SMSLEOPARD_ACCESS_TOKEN = os.getenv('SMSLEOPARD_ACCESS_TOKEN')
 
-LOGIN_REDIRECT_URL = 'home'
-LOGOUT_REDIRECT_URL = 'home'
 
 AUTH_USER_MODEL = 'users.CustomUser'
-# AUTH_USER_MODEL = 'chatroom.YourCustomUserModel'
+
+
 
 
 

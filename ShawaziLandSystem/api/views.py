@@ -557,7 +557,6 @@ class TransactionsListView(APIView):
             if date_obj is None:
                 return Response({"error": "Date format is incorrect"}, status=status.HTTP_400_BAD_REQUEST)
             formatted_date = date_obj.strftime('%Y-%m-%d')
-            # Handle agreement logic
             agreement_id = request.data.get('agreement_id')
             if agreement_id:
                 agreement = get_object_or_404(Agreements, id=agreement_id)
@@ -632,17 +631,13 @@ class NotificationsListView(APIView):
             "property": property_name
         })
 
-# class PropertyListView(ListView):
-#     model = Land
-#     template_name = 'property_list.html'  
-#     context_object_name = 'properties'
 
 class SellerNotificationView(TemplateView):
     template_name = 'seller_notifications.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['notifications'] = messages.get_messages(self.request)  # Get the messages
+        context['notifications'] = messages.get_messages(self.request)  
         return context
 
 class AgreementsView(APIView):

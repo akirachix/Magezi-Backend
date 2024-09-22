@@ -1,9 +1,7 @@
 from turtle import home
 from django.urls import path
-
 from agreements import views
 from .views import AgreementDetailView, Create_Room, Index_View, Login_View, Message_View,otp_verification, AgreementsView, CheckBlockchainView, LandListView,LandDetailView, LandMapDetailView, LandMapListView, NotificationsListView, RegisteredUsersView, SellerNotificationView, TransactionsDetailView, TransactionsListView, UserProfileAPIView, forgot_password, login_user, logout_user, password_reset_confirm, reset_password, user_create
-# from .views import (AgreementsView,AgreementDetailView,CheckBlockchainView,NotificationsListView, TransactionsDetailView,SellerNotificationView, PropertyListView, user_create,login_user,logout_user,password_reset_confirm, home,forgot_password,reset_password,UserProfileAPIView,RegisteredUsersView,Index_View,Login_View,Create_Room,Message_View)
 from api import views
 
 
