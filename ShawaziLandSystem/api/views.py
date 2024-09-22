@@ -3,6 +3,7 @@ import logging
 import random
 from django.shortcuts import get_object_or_404, redirect
 import requests
+import re
 from datetime import timedelta
 from rest_framework import status, generics, permissions, viewsets
 from rest_framework.response import Response
@@ -91,6 +92,8 @@ def user_create(request):
     else:
         logger.error(f"Registration failed with errors: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
 
 
 @api_view(['POST'])
@@ -328,6 +331,10 @@ class RegisteredUsersView(APIView):
             user = serializer.save()
             return Response(self.get_user_data(user), status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def count(self, request):
+        payment_count = CustomUser.objects.count() 
+        return Response({"count": payment_count}, status=status.HTTP_200_OK)
 
 
 class UserListView(generics.ListAPIView):
@@ -353,6 +360,10 @@ class LandListView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def count(self, request):
+        payment_count = User.objects.count() 
+        return Response({"count": payment_count}, status=status.HTTP_200_OK)
 
 
 """ This class handles detailed view and updates for specific land details """
@@ -452,11 +463,15 @@ class AgreementsView(APIView):
             agreement = serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def count(self, request):
+        payment_count = Agreements.objects.count() 
+        return Response({"count": payment_count}, status=status.HTTP_200_OK)
 
 class AgreementDetailView(APIView):
     def get_object(self, id):
         try:
-            return Agreements.objects.get(agreement_id=id)  # Use the correct field name
+            return Agreements.objects.get(agreement_id=id)
         except Agreements.DoesNotExist:
             return None
 
@@ -467,34 +482,37 @@ class AgreementDetailView(APIView):
             return Response(serializer.data)
         return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
 
-def put(self, request, id):
-    agreement = self.get_object(id)
-    if agreement is not None:
-        if hasattr(request.user, 'lawyer'):
-            serializer = AgreementsSerializer(agreement, data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def put(self, request, id):
+        agreement = self.get_object(id)
+        if agreement is not None:
+            if hasattr(request.user, 'lawyer'):
+                serializer = AgreementsSerializer(agreement, data=request.data)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response({"error": "Only lawyers can update agreements"}, status=status.HTTP_403_FORBIDDEN)
         else:
-            return Response({"error": "Only lawyers can update agreements"}, status=status.HTTP_403_FORBIDDEN)
-    else:
-        return Response({"error": "Agreement not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Agreement not found"}, status=status.HTTP_404_NOT_FOUND)
+
 
 class TransactionsListView(APIView):
     def get(self, request):
-       transactions = Transactions.objects.all()
-       serializer = TransactionsSerializer(transactions, many=True)
-       return Response(serializer.data)
-
+        transactions = Transactions.objects.all()
+        serializer = TransactionsSerializer(transactions, many=True)
+        return Response(serializer.data)
     def post(self, request):
-        if 'buyerimage' not in request.FILES or 'sellerimage' not in request.FILES:
-            return Response({"error": "Both files (buyerimage and sellerimage) must be provided"}, status=400)
-
-        image_file1 = request.FILES['buyerimage']
-        image_file2 = request.FILES['sellerimage']
+        user_type = request.data.get('user_type')
+        if not user_type:
+            return Response({"error": "User type is required"}, status=status.HTTP_400_BAD_REQUEST)
+        if user_type not in ['buyer', 'seller']:
+            return Response({"error": "Invalid user type"}, status=status.HTTP_400_BAD_REQUEST)
+        image_key = f'{user_type}image'
+        if image_key not in request.FILES:
+            return Response({"error": f"{user_type.capitalize()} image must be provided"}, status=status.HTTP_400_BAD_REQUEST)
+        image_file = request.FILES[image_key]
         client = vision.ImageAnnotatorClient()
-
         def extract_data_from_image(image_file):
             try:
                 image_content = image_file.read()
@@ -503,8 +521,8 @@ class TransactionsListView(APIView):
                 texts = response.text_annotations
                 extracted_text = texts[0].description if texts else ""
             except Exception as e:
-                raise ValueError(f"Failed to process image: {str(e)}")
-
+                logger.error(f"Failed to process image: {str(e)}")
+                raise ValueError("Failed to process image.")
             patterns = {
                 'amount': [r'Ksh\s*([\d,]+\.\d{2})', r'KES\s*([\d,]+\.\d{2})'],
                 'date': [r'on\s*(\d{1,2}/\d{1,2}/\d{2})', r'(\d{1,2}/\d{1,2}/\d{4})'],
@@ -518,86 +536,64 @@ class TransactionsListView(APIView):
                         matches[key] = match.group(1)
                         break
             return matches
-
         try:
-            data1 = extract_data_from_image(image_file1)
-            data2 = extract_data_from_image(image_file2)
+            data = extract_data_from_image(image_file)
         except ValueError as e:
-            return Response({"error": str(e)}, status=400)
-
-        if all(k in data1 and k in data2 for k in ['amount', 'date', 'code']):
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        if all(k in data for k in ['amount', 'date', 'code']):
             try:
-                amount1 = float(data1['amount'].replace(',', ''))
-                amount2 = float(data2['amount'].replace(',', ''))
+                amount = float(data['amount'].replace(',', ''))
             except ValueError:
-                return Response({"error": "Invalid amount format in one of the images"}, status=400)
-
-            date1, date2 = data1['date'], data2['date']
+                return Response({"error": "Invalid amount format in the image"}, status=status.HTTP_400_BAD_REQUEST)
+            date = data['date']
             date_formats = ['%d/%m/%y', '%d/%m/%Y']
-            date_obj1 = date_obj2 = None
-
+            date_obj = None
             for fmt in date_formats:
                 try:
-                    date_obj1 = datetime.strptime(date1, fmt)
-                    date_obj2 = datetime.strptime(date2, fmt)
+                    date_obj = datetime.strptime(date, fmt)
                     break
                 except ValueError:
                     continue
-
-            if date_obj1 is None or date_obj2 is None:
-                return Response({"error": "Date format is incorrect"}, status=400)
-
-            formatted_date1 = date_obj1.strftime('%Y-%m-%d')
-            formatted_date2 = date_obj2.strftime('%Y-%m-%d')
-
-            if (amount1 == amount2 and
-                formatted_date1 == formatted_date2 and
-                data1['code'] == data2['code']):
-                
-                agreement_id = request.data.get('agreement_id')
-                
-                if agreement_id:
-                    agreement = get_object_or_404(Agreements, id=agreement_id)
-                else:
-                  
-                    agreement = Agreements.objects.create(
-                        contract_duration=12,  
-                        agreed_amount=amount1,  
-                        installment_schedule="Monthly", 
-                        penalties_interest_rate=5, 
-                        down_payment=0,  
-                    )
-
-                try:
-                    transaction, created = Transactions.objects.update_or_create(
-                        unique_code=data1['code'],
-                        defaults={
-                            'amount': amount1,
-                            'date': timezone.now(),
-                            'status': 'complete',
-                            'agreement': agreement
-                        }
-                    )
-                    agreement.update_on_transaction(amount1)
-
-                    message = "Transaction created and marked as complete" if created else "Transaction updated and marked as complete"
-                except Exception as e:
-                    return Response({"error": f"Failed to save transaction: {str(e)}"}, status=500)
-
-                return Response({"message": message, "amount": amount1}, status=201)
-
+            if date_obj is None:
+                return Response({"error": "Date format is incorrect"}, status=status.HTTP_400_BAD_REQUEST)
+            formatted_date = date_obj.strftime('%Y-%m-%d')
+            # Handle agreement logic
+            agreement_id = request.data.get('agreement_id')
+            if agreement_id:
+                agreement = get_object_or_404(Agreements, id=agreement_id)
             else:
-                return Response({
-                    "error": "The amounts, dates, or unique codes do not match",
-                    "amount1": amount1,
-                    "amount2": amount2,
-                    "date1": formatted_date1,
-                    "date2": formatted_date2,
-                    "code1": data1['code'],
-                    "code2": data2['code']
-                }, status=400)
+                agreement = Agreements.objects.create(
+                    contract_duration=12,
+                    agreed_amount=amount,
+                    installment_schedule="Monthly",
+                    penalties_interest_rate=5,
+                    down_payment=0,
+                )
+            try:
+                transaction, created = Transactions.objects.update_or_create(
+                    unique_code=data['code'],
+                    defaults={
+                        'amount': amount,
+                        'date': timezone.now(),
+                        'status': 'complete',
+                        'agreement': agreement
+                    }
+                )
+                agreement.update_on_transaction(amount)
+                message = "Transaction created and marked as complete" if created else "Transaction updated and marked as complete"
+            except Exception as e:
+                logger.error(f"Failed to save transaction: {str(e)}")
+                return Response({"error": f"Failed to save transaction: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"message": message, "amount": amount}, status=status.HTTP_201_CREATED)
         else:
-            return Response({"error": "Could not extract all required information from both images"}, status=400)
+            return Response({"error": "Could not extract all required information from the image"}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+
+       
+        
+
+    
 
 
 class TransactionsDetailView(APIView):
