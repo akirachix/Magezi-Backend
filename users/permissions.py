@@ -1,9 +1,5 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
-class IsAuthenticatedAndHasPermission(BasePermission):
-    def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.has_perm('Admin')
-
 class HasLawyerPermissions(BasePermission):
     """
     Custom permission for lawyers.
@@ -17,7 +13,7 @@ class HasLawyerPermissions(BasePermission):
             'users.view_transaction',
             'users.can_communicate_with_clients',
         ]
-        return any(request.user.has_perm(perm) for perm in lawyer_permissions)
+        return request.user.role == 'lawyer' and any(request.user.has_perm(perm) for perm in lawyer_permissions)
 
 class HasBuyerPermissions(BasePermission):
     """
@@ -35,7 +31,7 @@ class HasBuyerPermissions(BasePermission):
             'users.upload_payment_document',
             'users.view_transaction',
         ]
-        return any(request.user.has_perm(perm) for perm in buyer_permissions)
+        return request.user.role == 'buyer' and any(request.user.has_perm(perm) for perm in buyer_permissions)
 
 class HasSellerPermissions(BasePermission):
     """
@@ -52,4 +48,6 @@ class HasSellerPermissions(BasePermission):
             'users.upload_payment_document',
             'users.view_transaction',
         ]
-        return any(request.user.has_perm(perm) for perm in seller_permissions)
+        return request.user.role == 'seller' and any(request.user.has_perm(perm) for perm in seller_permissions)
+
+
