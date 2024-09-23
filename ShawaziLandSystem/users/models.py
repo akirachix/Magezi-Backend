@@ -58,9 +58,27 @@ class CustomUser(AbstractUser):
 
     objects = CustomUserManager()
 
+class CustomPermissionsMeta:
+    class Meta:
+        permissions = [
+            ("can_view_property", "Can view property"),
+            ("can_view_purchase_history", "Can view purchase history"),
+            ("can_communicate_with_seller", "Can communicate with seller"),
+            ("assign_a_lawyer", "Can assign a lawyer"),
+            ("upload_payment_document", "Can upload payment document"),
+            ("view_transaction", "Can view transaction"),
+            ("can_view_offers", "Can view offers"),
+            ("can_communicate_with_buyer", "Can communicate with buyer"),
+            ("draft_a_contract", "Can draft a contract"),
+            ("can_communicate_with_clients", "Can communicate with clients"),
+        ]
+
   
     def __str__(self):
         return f"{self.phone_number} - {self.role}"
+    
+    def get_permissions(self):
+        return list(self.user_permissions.values_list('codename', flat=True))
 
 class RegistrationCode(models.Model):
     phone_number = models.CharField(max_length=17)

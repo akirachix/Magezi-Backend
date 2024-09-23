@@ -9,10 +9,11 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-
+import json
 import os
 from dotenv import load_dotenv 
 from pathlib import Path
+from google.cloud import vision
 
 
 
@@ -98,7 +99,15 @@ CHANNEL_LAYERS = {
 
 
 load_dotenv()
-GOOGLE_APPLICATION_CREDENTIALS = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+
+GOOGLE_VISION_CREDENTIALS = json.loads(os.getenv('GOOGLE_VISION_CREDENTIALS'))
+
+
+
+
+
+
+
 
 DATABASES = {
      'default': {
@@ -110,6 +119,7 @@ DATABASES = {
         'PORT': os.getenv('DATABASE_PORT'),
     }
 }
+
 
 
 
@@ -162,8 +172,6 @@ SMSLEOPARD_ACCESS_TOKEN = os.getenv('SMSLEOPARD_ACCESS_TOKEN')
 
 
 AUTH_USER_MODEL = 'users.CustomUser'
-
-
 
 
 

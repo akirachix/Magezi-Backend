@@ -1,54 +1,46 @@
 from django.test import TestCase
-
-from django.test import TestCase
-from django.contrib.auth.models import User
-from chatroom.models import Room, Message
-
-class RoomModelTest(TestCase):
-
+from .models import Room, Message
+from users.models import CustomUser
+class ChatroomTests(TestCase):
     def setUp(self):
-
-        self.user = User.objects.create_user(username='testuser', password='password123')
-        
-        self.room = Room.objects.create(room_name="Test Room")
-
-    def test_room_creation(self):
-
-        self.assertEqual(self.room.room_name, "Test Room")
-        self.assertEqual(str(self.room), "Test Room")
-
-    def test_create_new_room_message(self):
-
-        self.room.create_new_room_message(sender=self.user, message="Hello, World!")
-        
-        messages = self.room.return_room_messages()
-        self.assertEqual(messages.count(), 1)
-        self.assertEqual(messages.first().message, "Hello, World!")
-        self.assertEqual(messages.first().sender, self.user)
-
-    def test_return_room_messages(self):
-
-        Message.objects.create(room=self.room, sender=self.user, message="Message 1")
-        Message.objects.create(room=self.room, sender=self.user, message="Message 2")
-        
-        messages = self.room.return_room_messages()
-        
-        self.assertEqual(messages.count(), 2)
-        self.assertIn("Message 1", [msg.message for msg in messages])
-        self.assertIn("Message 2", [msg.message for msg in messages])
-
-class MessageModelTest(TestCase):
-
-    def setUp(self):
-
-        self.user = User.objects.create_user(username='testuser', password='password123')
-        self.room = Room.objects.create(room_name="Test Room")
-
-    def test_message_creation(self):
-
-        message = Message.objects.create(room=self.room, sender=self.user, message="Hello, Test!")
-        
+        self.user = CustomUser.objects.create_user(
+            phone_number='+12345678901',
+            first_name='Test',
+            last_name='User',
+            password='testpassword'
+        )
+        self.room = Room.objects.create(room_name='Test Room')
+    def test_send_message_happy_case(self):
+        """Test successful message sending."""
+        message_content = 'Hello, world!'
+        message = Message.objects.create(room=self.room, sender=self.user, message=message_content)
+        self.assertEqual(message.message, message_content)
         self.assertEqual(message.room, self.room)
         self.assertEqual(message.sender, self.user)
-        self.assertEqual(message.message, "Hello, Test!")
-        self.assertEqual(str(message), "testuser: Hello, Test!")
+    def test_send_message_unhappy_case_no_sender(self):
+        """Test sending a message without a sender raises an error."""
+        with self.assertRaises(ValueError) as context:
+            # Call the method that creates a new message
+            self.room.create_new_room_message(sender=None, message='Hello!')
+        self.assertEqual(str(context.exception), "Sender cannot be None")
+    def test_send_message_unhappy_case_empty_message(self):
+        """Test sending an empty message raises an error."""
+        with self.assertRaises(ValueError) as context:
+            Message.objects.create(room=self.room, sender=self.user, message='')
+        self.assertEqual(str(context.exception), "Message cannot be empty")
+    def test_create_new_room_message_happy_case(self):
+        """Test creating a new message via room method."""
+        new_message = self.room.create_new_room_message(sender=self.user, message='Hello from room!')
+        messages = Message.objects.filter(room=self.room)
+        self.assertEqual(messages.count(), 1)
+        self.assertEqual(messages.first().message, 'Hello from room!')
+    def test_create_new_room_message_unhappy_case_no_sender(self):
+        """Test creating a new message with no sender raises an error."""
+        with self.assertRaises(ValueError) as context:
+            self.room.create_new_room_message(sender=None, message='Hello from room!')
+        self.assertEqual(str(context.exception), "Sender cannot be None")
+    def test_create_new_room_message_unhappy_case_no_message(self):
+        """Test creating a new message with no content raises an error."""
+        with self.assertRaises(ValueError) as context:
+            self.room.create_new_room_message(sender=self.user, message='')
+        self.assertEqual(str(context.exception), "Message cannot be empty")
