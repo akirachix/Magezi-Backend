@@ -56,7 +56,7 @@ INSTALLED_APPS = [
     'land_sellers',
     'lawyers',
     'corsheaders',
-    'drf-yasg',
+    # 'drf-yasg',
 
 ]
 
