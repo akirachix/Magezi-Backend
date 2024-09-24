@@ -180,11 +180,6 @@ load_dotenv()
 
 GOOGLE_VISION_CREDENTIALS = json.loads(os.getenv('GOOGLE_VISION_CREDENTIALS','{}'))
 
-# google_credentials = os.getenv('GOOGLE_VISION_CREDENTIALS')
-# if google_credentials is None:
-#     raise ValueError("GOOGLE_VISION_CREDENTIALS environment variable is not set.")
-
-# GOOGLE_VISION_CREDENTIALS = json.loads(google_credentials)
 
 
 ENV_FILE = find_dotenv()
