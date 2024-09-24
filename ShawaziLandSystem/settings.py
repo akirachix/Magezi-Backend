@@ -56,7 +56,7 @@ INSTALLED_APPS = [
     'land_sellers',
     'lawyers',
     'corsheaders',
-    # 'drf-yasg',
+    'drf-yasg',
 
 ]
 
@@ -178,7 +178,7 @@ SMSLEOPARD_ACCESS_TOKEN = os.getenv('SMSLEOPARD_ACCESS_TOKEN',"")
 
 load_dotenv()
 
-GOOGLE_VISION_CREDENTIALS = json.loads(os.getenv('GOOGLE_VISION_CREDENTIALS',{}))
+GOOGLE_VISION_CREDENTIALS = json.loads(os.getenv('GOOGLE_VISION_CREDENTIALS','{}'))
 
 
 
