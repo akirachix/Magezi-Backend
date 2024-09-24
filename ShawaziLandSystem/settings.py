@@ -15,6 +15,8 @@ from dotenv import load_dotenv, find_dotenv
 import dj_database_url
 from pathlib import Path
 from google.cloud import vision
+import drf_yasg
+
 
 
 
@@ -56,7 +58,7 @@ INSTALLED_APPS = [
     'land_sellers',
     'lawyers',
     'corsheaders',
-    'drf-yasg',
+    'drf_yasg',
 
 ]
 
