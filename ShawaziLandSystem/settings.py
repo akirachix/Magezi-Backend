@@ -178,13 +178,13 @@ SMSLEOPARD_ACCESS_TOKEN = os.getenv('SMSLEOPARD_ACCESS_TOKEN',"")
 
 load_dotenv()
 
-# GOOGLE_VISION_CREDENTIALS = json.loads(os.getenv('GOOGLE_VISION_CREDENTIALS', ''))
+GOOGLE_VISION_CREDENTIALS = json.loads(os.getenv('GOOGLE_VISION_CREDENTIALS', {}))
 
-google_credentials = os.getenv('GOOGLE_VISION_CREDENTIALS')
-if google_credentials is None:
-    raise ValueError("GOOGLE_VISION_CREDENTIALS environment variable is not set.")
+# google_credentials = os.getenv('GOOGLE_VISION_CREDENTIALS')
+# if google_credentials is None:
+#     raise ValueError("GOOGLE_VISION_CREDENTIALS environment variable is not set.")
 
-GOOGLE_VISION_CREDENTIALS = json.loads(google_credentials)
+# GOOGLE_VISION_CREDENTIALS = json.loads(google_credentials)
 
 
 ENV_FILE = find_dotenv()
