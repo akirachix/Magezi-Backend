@@ -1,0 +1,1 @@
+web: gunicorn ShawaziLandSystem.wsgi --log-file -
