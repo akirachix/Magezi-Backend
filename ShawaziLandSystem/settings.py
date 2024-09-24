@@ -20,6 +20,7 @@ from google.cloud import vision
 
 
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -119,6 +120,7 @@ DATABASES = {
         default=os.getenv('DATABASE_URL')
     )
 }
+
 # Fallback for local development and test environments
 if not os.getenv('DATABASE_URL'):
     DATABASES = {
