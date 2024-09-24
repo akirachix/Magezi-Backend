@@ -44,9 +44,7 @@ from .serializers import (
     UserSerializer,
 )
 from django.shortcuts import render
-
-from ShawaziLandSystem.settings import GOOGLE_VISION_CREDENTIALS
-
+GOOGLE_VISION_CREDENTIALS = json.loads(os.getenv('GOOGLE_VISION_CREDENTIALS'))
 
 
 credentials = service_account.Credentials.from_service_account_info(GOOGLE_VISION_CREDENTIALS)
