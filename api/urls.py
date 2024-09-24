@@ -1,4 +1,3 @@
-from turtle import home
 from django.urls import path
 from agreements import views
 from .views import AgreementDetailView, Create_Room, RoomCreateView, Index_View, Login_View, Message_View,otp_verification, AgreementsView, CheckBlockchainView, LandListView,LandDetailView, LandMapDetailView, LandMapListView,  RegisteredUsersView,  TransactionsDetailView, TransactionsListView, UserProfileAPIView, forgot_password, login_user, logout_user, password_reset_confirm, reset_password, user_create
@@ -13,7 +12,6 @@ urlpatterns = [
     path('login/', login_user, name='login_user'),
     path('logout/', logout_user, name='logout_user'),
     path('password-reset-confirm/', password_reset_confirm, name='password_reset_confirm'),
-    path('home/', home, name='home'),
     path('forgot-password/', forgot_password, name='forgot_password'),
     path('reset-password/', reset_password, name='reset_password'),
     path('user-profile/<int:user_id>/', UserProfileAPIView.as_view(), name='user_profile'),
