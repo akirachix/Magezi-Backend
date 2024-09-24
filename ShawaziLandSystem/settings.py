@@ -9,10 +9,12 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-
+import json
 import os
-from dotenv import load_dotenv 
+from dotenv import load_dotenv, find_dotenv
+import dj_database_url
 from pathlib import Path
+from google.cloud import vision
 
 
 
@@ -53,6 +55,9 @@ INSTALLED_APPS = [
     'land_buyers',
     'land_sellers',
     'lawyers',
+    'corsheaders',
+    'drf-yasg',
+
 ]
 
 MIDDLEWARE = [
@@ -63,7 +68,15 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
 ]
+
+
+
+CORS_ALLOW_ALL_ORIGINS = True
+STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 ROOT_URLCONF = 'ShawaziLandSystem.urls'
 
@@ -83,6 +96,8 @@ TEMPLATES = [
     },
 ]
 
+
+
 WSGI_APPLICATION = 'ShawaziLandSystem.wsgi.application'
 ASGI_APPLICATION = 'ShawaziLandSystem.asgi.application'
 CHANNEL_LAYERS = {
@@ -96,20 +111,21 @@ CHANNEL_LAYERS = {
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-
-load_dotenv()
-GOOGLE_APPLICATION_CREDENTIALS = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
-
+DATABASE_URL = os.getenv("DATABASE_URL")
 DATABASES = {
-     'default': {
-       'ENGINE': 'django.db.backends.postgresql',
-         'NAME': os.getenv('DATABASE_NAME'),
-        'USER': os.getenv('DATABASE_USER'),
-        'PASSWORD': os.getenv('DATABASE_PASSWORD'),
-        'HOST':os.getenv('DATABASE_HOST'),
-        'PORT': os.getenv('DATABASE_PORT'),
-    }
+    'default': dj_database_url.config(
+        default=os.getenv('DATABASE_URL')
+    )
 }
+# Fallback for local development and test environments
+if not os.getenv('DATABASE_URL'):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
 
 
 
@@ -155,15 +171,27 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-OPENSTREETMAP_API_TOKEN = os.getenv('OPENSTREETMAP_API_TOKEN')
+OPENSTREETMAP_API_TOKEN = os.getenv('OPENSTREETMAP_API_TOKEN',"")
 
-SMSLEOPARD_API_URL = os.getenv('SMSLEOPARD_API_URL')
-SMSLEOPARD_ACCESS_TOKEN = os.getenv('SMSLEOPARD_ACCESS_TOKEN')
+SMSLEOPARD_API_URL = os.getenv('SMSLEOPARD_API_URL',"")
+SMSLEOPARD_ACCESS_TOKEN = os.getenv('SMSLEOPARD_ACCESS_TOKEN',"")
+
+load_dotenv()
+
+GOOGLE_VISION_CREDENTIALS = json.loads(os.getenv('GOOGLE_VISION_CREDENTIALS',""))
 
 
+ENV_FILE = find_dotenv()
+if ENV_FILE:
+    load_dotenv(ENV_FILE)
+
+
+AUTH0_DOMAIN = os.environ.get("AUTH0_DOMAIN","")
+AUTH0_CLIENT_ID = os.environ.get("AUTH0_CLIENT_ID","")
+AUTH0_CLIENT_SECRET = os.environ.get("AUTH0_CLIENT_SECRET","")
+REDIRECT_URI=os.environ.get("REDIRECT_URI","")
 AUTH_USER_MODEL = 'users.CustomUser'
-
-
-
-
+AUTHENTICATION_BACKENDS = (
+        'django.contrib.auth.backends.ModelBackend',
+    )
 

@@ -7,25 +7,38 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 import phonenumbers
 from users.models import CustomUser
+from chatroom.models import Room
 
 User = get_user_model()
 
 
+from rest_framework import serializers
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
+import phonenumbers
+
+User = get_user_model()
+
 class CustomUserCreationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
+    permissions = serializers.SerializerMethodField()
 
     class Meta:
         model = User 
-        fields = ['first_name', 'last_name', 'phone_number', 'password', 'role']
+        fields = ['first_name', 'last_name', 'phone_number', 'password', 'role', 'permissions']
+
+    def get_permissions(self, obj):
+        return list(obj.user_permissions.values_list('codename', flat=True))
 
     def create(self, validated_data):
-        return User.objects.create_user(
+        user = User.objects.create_user(
             first_name=validated_data['first_name'],
             last_name=validated_data['last_name'],
             phone_number=validated_data['phone_number'],
             password=validated_data['password'],
             role=validated_data['role']
         )
+        return user
 
     def validate_phone_number(self, value):
         try:
@@ -36,20 +49,10 @@ class CustomUserCreationSerializer(serializers.ModelSerializer):
         except phonenumbers.NumberParseException:
             raise serializers.ValidationError("Invalid phone number format")
 
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CustomUser
-        fields = ['phone_number', 'first_name', 'last_name', 'role', 'password']
-        extra_kwargs = {'password': {'write_only': True}}
-
-    def validate_phone_number(self, value):
-        if CustomUser.objects.filter(phone_number=value).exists():
-            raise serializers.ValidationError("A user with this phone number already exists.")
-        return value
-
-    def create(self, validated_data):
-        return CustomUser.objects.create_user(**validated_data)
-
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        ret['permissions'] = self.get_permissions(instance)
+        return ret
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -90,14 +93,68 @@ class LandDetailSerializer(serializers.ModelSerializer):
         return history if history else None
 
 class AgreementsSerializer(serializers.ModelSerializer):
+    parcel_number = serializers.CharField(write_only=True)
+
     class Meta:
         model = Agreements
-        fields = '__all__'
+        fields = ['agreement_id', 'parcel_number', 'seller', 'buyer', 'lawyer', 'date_created',
+                  'contract_duration', 'agreed_amount', 'installment_schedule',
+                  'penalties_interest_rate', 'down_payment', 'buyer_agreed',
+                  'seller_agreed', 'terms_and_conditions', 'transaction_count',
+                  'remaining_amount', 'total_amount_made', 'agreement_hash', 'previous_hash',
+                  'transactions_history']
+        
+    def validate_parcel_number(self, value):
+        """Ensure the parcel number exists in LandDetails."""
+        if not LandDetails.objects.filter(parcel_number=value).exists():
+            raise serializers.ValidationError("LandDetails with this parcel number does not exist.")
+        return value
+    
+    def create(self, validated_data):
+        parcel_number = validated_data.pop('parcel_number')
+        land_detail = LandDetails.objects.get(parcel_number=parcel_number)
+        agreement = Agreements.objects.create(
+            parcel_number=land_detail,
+            **validated_data
+        )
+        return agreement
+
 class TransactionsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transactions
-        fields = '__all__'
+        fields = ['unique_code', 'amount', 'date', 'status', 'agreement', 'seller', 'buyer', 'lawyer']
+    def validate_agreement(self, value):
+        """ Ensure the agreement is valid """
+
+        if not Agreements.objects.filter(id=value.id).exists():
+            raise serializers.ValidationError("The agreement does not exist.")
+        
+        return value
+    def create(self, validated_data):
+        return Transactions.objects.create(**validated_data)
+    
 class BlockchainValidationSerializer(serializers.Serializer):
     validation_result = serializers.CharField()
-        
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ['phone_number', 'first_name', 'last_name', 'role', 'password']
+        extra_kwargs = {'password': {'write_only': True}}
+
+    def validate_phone_number(self, value):
+        if CustomUser.objects.filter(phone_number=value).exists():
+            raise serializers.ValidationError("A user with this phone number already exists.")
+        return value
+
+    def create(self, validated_data):
+        return CustomUser.objects.create_user(**validated_data)
+    
+class RoomSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Room
+        fields = '__all__'    
+
+
 

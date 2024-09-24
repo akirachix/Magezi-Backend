@@ -4,6 +4,7 @@ import random
 from django.shortcuts import get_object_or_404, redirect
 import requests
 import re
+from django.conf import settings
 from datetime import timedelta
 from rest_framework import status, generics, permissions, viewsets
 from rest_framework.response import Response
@@ -17,14 +18,15 @@ from agreements.models import Agreements
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from api.utils import send_in_system_notification
 from datetime import datetime
 from django.http import JsonResponse
-from django.views.generic import TemplateView
 from transactions.blockchain import Blockchain
 from django.views.generic import ListView
 from django.contrib import messages
 from google.cloud import vision
+from google.oauth2 import service_account
+import json
+import os
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
@@ -34,6 +36,7 @@ from chatroom.models import Room, Message
 from rest_framework import generics, status
 from rest_framework.decorators import api_view
 from django.contrib.auth.models import Permission
+from .serializers import RoomSerializer
 from users.models import CustomUser, RegistrationCode
 from .serializers import (
     CustomUserCreationSerializer,
@@ -41,6 +44,15 @@ from .serializers import (
     UserSerializer,
 )
 from django.shortcuts import render
+GOOGLE_VISION_CREDENTIALS = json.loads(os.getenv('GOOGLE_VISION_CREDENTIALS'))
+
+
+credentials = service_account.Credentials.from_service_account_info(GOOGLE_VISION_CREDENTIALS)
+
+
+client = vision.ImageAnnotatorClient(credentials=credentials)
+
+
 
 
 
@@ -70,8 +82,6 @@ def send_otp(phone_number, otp):
         return {"error": str(e)}
 
 
-
-
 @api_view(['POST'])
 def user_create(request):
     serializer = CustomUserCreationSerializer(data=request.data)
@@ -79,22 +89,16 @@ def user_create(request):
     if serializer.is_valid():
         user = serializer.save(is_active=False)  
         
-       
-        permissions = user.user_permissions.values_list('codename', flat=True)
-        
         return Response({
             "message": "User registered successfully.",
             "user_id": user.id,
             "first_name": user.first_name,
             "last_name": user.last_name,
             "phone_number": user.phone_number,
-            "permissions": list(permissions) 
+            "permissions": serializer.data['permissions']
         }, status=status.HTTP_201_CREATED)
     else:
-        logger.error(f"Registration failed with errors: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-
 
 
 @api_view(['POST'])
@@ -116,7 +120,7 @@ def login_user(request):
         RegistrationCode.objects.create(
             phone_number=user.phone_number,
             code=otp,
-            expires_at=timezone.now() + timedelta(seconds=40)
+            expires_at=timezone.now() + timedelta(minutes=5)
         )
         send_otp(user.phone_number, otp)
 
@@ -136,6 +140,10 @@ def logout_user(request):
     return Response({"message": "Logged out successfully"}, status=status.HTTP_200_OK)
 
 
+
+
+
+
 @api_view(['POST'])
 def otp_verification(request):
     otp = request.data.get('otp')
@@ -144,17 +152,25 @@ def otp_verification(request):
     if not otp or not phone_number:
         return Response({"message": "OTP and phone number are required"}, status=status.HTTP_400_BAD_REQUEST)
     
+    logger.info(f"Received OTP verification request: Phone Number: {phone_number}, OTP: {otp}")
+    
     try:
         user = CustomUser.objects.get(phone_number=phone_number)
-        registration_code = RegistrationCode.objects.get(phone_number=phone_number, code=otp)
+        registration_code = RegistrationCode.objects.filter(phone_number=phone_number, code=otp).first()
+
+        if not registration_code:
+            logger.error(f"No registration code found for Phone Number: {phone_number} and OTP: {otp}")
+            return Response({"message": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
         
-        if registration_code.is_expired():
+        if registration_code.expires_at < timezone.now():
+            logger.error(f"OTP for Phone Number: {phone_number} has expired.")
             return Response({"message": "OTP expired"}, status=status.HTTP_400_BAD_REQUEST)
+        
         
         user.is_active = True
         user.is_phone_verified = True
         user.save()
-        registration_code.delete()
+        registration_code.delete()  
         
         return Response({
             "message": "OTP Verified Successfully. You can now log in to the system.",
@@ -163,9 +179,10 @@ def otp_verification(request):
         }, status=status.HTTP_200_OK)
     
     except CustomUser.DoesNotExist:
+        logger.error(f"User with phone number {phone_number} does not exist.")
         return Response({"message": "User with this phone number does not exist"}, status=status.HTTP_404_NOT_FOUND)
-    except RegistrationCode.DoesNotExist:
-        return Response({"message": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 @api_view(['POST'])
 def password_reset_confirm(request):
@@ -180,7 +197,7 @@ def password_reset_confirm(request):
         user = CustomUser.objects.get(phone_number=phone_number)
         registration_code = RegistrationCode.objects.get(phone_number=phone_number, code=otp)
         
-        if registration_code.expires_at < timezone.now() + timedelta(seconds=30):
+        if registration_code.expires_at < timezone.now():
             return Response({"message": "OTP expired"}, status=status.HTTP_400_BAD_REQUEST)
         
         user.set_password(new_password)
@@ -235,7 +252,7 @@ def forgot_password(request):
         RegistrationCode.objects.create(
             phone_number=user.phone_number,
             code=otp,
-            expires_at=timezone.now() + timedelta(seconds=30)
+            expires_at=timezone.now() + timedelta(minutes=5)
         )
         send_otp(user.phone_number, otp)
         
@@ -261,7 +278,7 @@ def reset_password(request):
         user = CustomUser.objects.get(phone_number=phone_number)
         registration_code = RegistrationCode.objects.get(phone_number=phone_number, code=otp)
         
-        if timezone.now() + timedelta(seconds=30) > registration_code.expires_at:
+        if timezone.now() + timedelta(seconds=50) > registration_code.expires_at:
             registration_code.delete()
             return Response({"message": "OTP has expired. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -342,6 +359,8 @@ class UserListView(generics.ListAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer    
 
+    
+
 
 
 
@@ -369,49 +388,71 @@ class LandListView(APIView):
 
 """ This class handles detailed view and updates for specific land details """
 class LandDetailView(APIView):
-    def get(self, request, pk=None, format=None):
-        """Get details for a specific land entry by ID or parcel number."""
-        land_parcel_number = request.query_params.get('land_parcel_number')
-        
+    def get(self, request, format=None):
+        parcel_number = request.query_params.get('parcel_number')
+        pk = request.query_params.get('pk')
+        # Check for parcel_number first
+        if parcel_number:
+            try:
+                land_detail = LandDetails.objects.get(parcel_number=parcel_number)
+                serializer = LandDetailSerializer(land_detail)
+                return Response(serializer.data)
+            except LandDetails.DoesNotExist:
+                return Response({"error": "The land details with the provided parcel number do not exist"}, status=status.HTTP_404_NOT_FOUND)
         if pk:
             try:
                 land_detail = LandDetails.objects.get(pk=pk)
+                serializer = LandDetailSerializer(land_detail)
+                return Response(serializer.data)
             except LandDetails.DoesNotExist:
-                raise NotFound('The Land details do not exist')
-        elif land_parcel_number:
-            try:
-                land_detail = LandDetails.objects.get(parcel_number=land_parcel_number)
-            except LandDetails.DoesNotExist:
-                raise NotFound('The Land details do not exist')
-        else:
-            raise NotFound('No valid identifier provided')
-
-        serializer = LandDetailSerializer(land_detail)
-        return Response(serializer.data)
-
+                return Response({"error": "The land details with the provided ID do not exist"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"error": "No valid identifier provided"}, status=status.HTTP_400_BAD_REQUEST)
     def put(self, request, pk=None, format=None):
-        """Update a specific land detail entry by ID or parcel number."""
-        land_parcel_number = request.data.get('land_parcel_number')
-        
-        if pk:
+        if pk is not None:
             try:
                 land_detail = LandDetails.objects.get(pk=pk)
             except LandDetails.DoesNotExist:
-                raise NotFound('The Land details do not exist')
-        elif land_parcel_number:
+                return Response({"error": "The land details with the provided ID do not exist"}, status=status.HTTP_404_NOT_FOUND)
+            serializer = LandDetailSerializer(land_detail, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        parcel_number = request.data.get('parcel_number')
+        if parcel_number:
             try:
-                land_detail = LandDetails.objects.get(parcel_number=land_parcel_number)
+                land_detail = LandDetails.objects.get(parcel_number=parcel_number)
             except LandDetails.DoesNotExist:
-                raise NotFound('The Land details do not exist')
-        else:
-            raise NotFound('No valid identifier provided')
-
-        serializer = LandDetailSerializer(land_detail, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+                return Response({"error": "The land details with the provided parcel number do not exist"}, status=status.HTTP_404_NOT_FOUND)
+            serializer = LandDetailSerializer(land_detail, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "No valid identifier provided"}, status=status.HTTP_400_BAD_REQUEST)
+    def patch(self, request, pk=None, format=None):
+        if pk is not None:
+            try:
+                land_detail = LandDetails.objects.get(pk=pk)
+            except LandDetails.DoesNotExist:
+                return Response({"error": "The land details with the provided ID do not exist"}, status=status.HTTP_404_NOT_FOUND)
+            serializer = LandDetailSerializer(land_detail, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        parcel_number = request.data.get('parcel_number')
+        if parcel_number:
+            try:
+                land_detail = LandDetails.objects.get(parcel_number=parcel_number)
+            except LandDetails.DoesNotExist:
+                return Response({"error": "The land details with the provided parcel number do not exist"}, status=status.HTTP_404_NOT_FOUND)
+            serializer = LandDetailSerializer(land_detail, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "No valid identifier provided"}, status=status.HTTP_400_BAD_REQUEST)
 
 """ This view handles the list and create functionality for land map details """
 class LandMapListView(viewsets.ModelViewSet):
@@ -452,37 +493,32 @@ class LandMapDetailView(APIView):
 
 
 class AgreementsView(APIView):
-
     def get(self, request):
         agreements = Agreements.objects.all()
         serializer = AgreementsSerializer(agreements, many=True)
         return Response(serializer.data)
-
     def post(self, request):
-        serializer = AgreementsSerializer(data=request.data) 
+        serializer = AgreementsSerializer(data=request.data)
         if serializer.is_valid():
             agreement = serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
     def count(self, request):
-        payment_count = Agreements.objects.count() 
+        payment_count = Agreements.objects.count()
         return Response({"count": payment_count}, status=status.HTTP_200_OK)
-
+    
 class AgreementDetailView(APIView):
     def get_object(self, id):
         try:
             return Agreements.objects.get(agreement_id=id)
         except Agreements.DoesNotExist:
             return None
-
     def get(self, request, id):
         agreement = self.get_object(id)
         if agreement is not None:
             serializer = AgreementsSerializer(agreement)
             return Response(serializer.data)
         return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
-
     def put(self, request, id):
         agreement = self.get_object(id)
         if agreement is not None:
@@ -496,6 +532,7 @@ class AgreementDetailView(APIView):
                 return Response({"error": "Only lawyers can update agreements"}, status=status.HTTP_403_FORBIDDEN)
         else:
             return Response({"error": "Agreement not found"}, status=status.HTTP_404_NOT_FOUND)
+
 
 
 class TransactionsListView(APIView):
@@ -513,7 +550,8 @@ class TransactionsListView(APIView):
         if image_key not in request.FILES:
             return Response({"error": f"{user_type.capitalize()} image must be provided"}, status=status.HTTP_400_BAD_REQUEST)
         image_file = request.FILES[image_key]
-        client = vision.ImageAnnotatorClient()
+
+        
         def extract_data_from_image(image_file):
             try:
                 image_content = image_file.read()
@@ -557,10 +595,14 @@ class TransactionsListView(APIView):
                     continue
             if date_obj is None:
                 return Response({"error": "Date format is incorrect"}, status=status.HTTP_400_BAD_REQUEST)
+            
             formatted_date = date_obj.strftime('%Y-%m-%d')
             agreement_id = request.data.get('agreement_id')
             if agreement_id:
-                agreement = get_object_or_404(Agreements, id=agreement_id)
+                agreement = get_object_or_404(Agreements, agreement_id=agreement_id) 
+                seller_instance = agreement.seller
+                buyer_instance = agreement.buyer
+                lawyer_instance = agreement.lawyer 
             else:
                 agreement = Agreements.objects.create(
                     contract_duration=12,
@@ -575,10 +617,14 @@ class TransactionsListView(APIView):
                     defaults={
                         'amount': amount,
                         'date': timezone.now(),
-                        'status': 'complete',
-                        'agreement': agreement
+                        'status': 'complete',  
+                        'agreement': agreement,
+                        'seller':seller_instance,
+                        'buyer':buyer_instance,
+                        'lawyer':lawyer_instance  
                     }
                 )
+                
                 agreement.update_on_transaction(amount)
                 message = "Transaction created and marked as complete" if created else "Transaction updated and marked as complete"
             except Exception as e:
@@ -589,62 +635,13 @@ class TransactionsListView(APIView):
             return Response({"error": "Could not extract all required information from the image"}, status=status.HTTP_400_BAD_REQUEST)
         
 class TransactionsDetailView(APIView):
-    def get(self,request,id):
-            transactionss = Transactions.objects.get(id=id)
-            serializer = TransactionsSerializer(transactionss)
-            return Response(serializer.data)
-    def delete(self,request,id):
-            transactions =Transactions.objects.get(id=id)
-            transactions.delete()
-            return Response(status=status.HTTP_202_ACCEPTED)
-
-
-class NotificationsListView(APIView):
-    def get(self,request,land_id):
-         property_details = get_object_or_404(LandDetails,land_id=land_id)
-         return render(request,'property_details.html',{
-             'property':property_details,
-         })
-    def post(self, request):
-        seller = request.data.get('seller')
-        buyer = request.user
-        seller = get_object_or_404(User, id=seller)
-
-       
-        property_name = request.data.get('name', 'a property')
-        notification_message = f"Buyer {buyer.username} is interested in {property_name}."
-
-        
-        messages.success(request, notification_message)
-
-        
-        return render(request, 'notification_success.html', {
-            "message": "Notification sent successfully!",
-            "buyer": buyer.username,
-            "property": property_name
-        })
-
-
-class SellerNotificationView(TemplateView):
-    template_name = 'seller_notifications.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['notifications'] = messages.get_messages(self.request)  
-        return context
-
-class AgreementsView(APIView):
-    def get(self, request):
-        agreements = Agreements.objects.all()
-        serializer = AgreementsSerializer(agreements, many=True)
+    def get(self, request, id):
+        transaction = get_object_or_404(Transactions, id=id)  
+        serializer = TransactionsSerializer(transaction)
         return Response(serializer.data)
 
-    def post(self, request):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            agreement = serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 class CheckBlockchainView(APIView):
     def get(self, request):
         blockchain = Blockchain() 
@@ -661,32 +658,37 @@ def Create_Room(request):
         room_name = request.POST.get('room')
         if room_name:
             room_name, created = Room.objects.get_or_create(room_name=room_name)
-            return redirect('messages', room_name=room_name) 
+            return redirect('messages', room_name=room_name)
     return render(request, 'index.html')
+
+def RoomListView(request):
+    rooms = Room.objects.all().values('id', 'room_name')
+    return JsonResponse(list(rooms), safe=False)
 
 @login_required
 def Message_View(request, room_name):
-    room = Room.objects.get(room_name=room_name)
-
+    try:
+        room = Room.objects.get(room_name=room_name)
+    except Room.DoesNotExist:
+        return Response({"error": "Room does not exist."}, status=status.HTTP_404_NOT_FOUND)
     if request.method == 'POST':
-        message_content = request.POST.get('message')
-        if message_content:
-
-            new_message = Message.objects.create(
-                room=room,
-                sender=request.user,  
-                message=message_content
-            )
-            new_message.save()
-            return redirect('messages', room_name=room_name) 
-
-    messages = Message.objects.filter(room=room).order_by('-timestamp') 
-    return render(request, 'message.html', {
-        'room_name': room_name,
-        'messages': messages,
-        'user': request.user.username
-    })
-
+        message_content = request.data.get('message')
+        if not message_content:
+            return Response({"error": "Message content cannot be empty."}, status=status.HTTP_400_BAD_REQUEST)
+        new_message = Message.objects.create(
+            room=room,
+            sender=request.user,
+            message=message_content
+        )
+        new_message.save()
+        response_data = {
+            "id": new_message.id,
+            "message": new_message.message,
+            "sender": new_message.sender.username,
+            "timestamp": new_message.timestamp.isoformat()
+        }
+        return Response(response_data, status=status.HTTP_201_CREATED)
+    
 def Login_View(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -698,6 +700,21 @@ def Login_View(request):
         else:
             return render(request, 'login.html', {'error': 'Invalid username or password'})
     return render(request, 'login.html')
-
 def Index_View(request):
     return render(request, 'index.html')
+
+class RoomCreateView(APIView):
+    # @csrf_exempt
+    def post(self, request):
+        serializer = RoomSerializer(data=request.data)
+        if serializer.is_valid():
+            room = serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def get(self, request):
+        rooms = Room.objects.all().values('id', 'room_name')
+        return Response(list(rooms), status=status.HTTP_200_OK)
+
+
+
+
