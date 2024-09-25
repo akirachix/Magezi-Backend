@@ -45,9 +45,9 @@ from .serializers import (
 )
 from django.shortcuts import render
 
-GOOGLE_VISION_CREDENTIALS = settings.GOOGLE_VISION_CREDENTIALS
-credentials =  vision.ImageAnnotatorClient(credentials=GOOGLE_VISION_CREDENTIALS)
-
+# GOOGLE_VISION_CREDENTIALS = settings.GOOGLE_VISION_CREDENTIALS
+# credentials =  vision.ImageAnnotatorClient(credentials=GOOGLE_VISION_CREDENTIALS)
+client = vision.ImageAnnotatorClient(credentials=settings.GOOGLE_VISION_CREDENTIALS)
 
 
 User = get_user_model()
