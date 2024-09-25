@@ -47,6 +47,7 @@ class RoomTest(TestCase):
         with self.assertRaises(ValueError):
             self.room.create_new_room_message(user=user, sender=user, message='')
 
+
 class MessageTest(TestCase):
     def setUp(self):
         self.user1 = CustomUser.objects.create_user(
@@ -55,21 +56,17 @@ class MessageTest(TestCase):
             phone_number='1234567890', 
             password='pass1'
         )
-        self.user2 = CustomUser.objects.create_user(
-            first_name='User2', 
-            last_name='Test', 
-            phone_number='0987654321', 
-            password='pass2'
-        )
         self.room = Room.objects.create(room_name='Test Room')
         self.message = Message.objects.create(user=self.user1, room=self.room, sender=self.user1, message='Hello')
 
     def test_message_str(self):
-        self.assertEqual(str(self.message), f"{self.user1}: Hello: {self.message.timestamp}")
+        expected_str = f"{self.user1.first_name} {self.user1.last_name}: Hello at {self.message.timestamp}"
+        self.assertEqual(str(self.message), expected_str)
 
     def test_message_empty_content(self):
         with self.assertRaises(ValueError):
             Message.objects.create(user=self.user1, room=self.room, sender=self.user1, message='')
+
 
 class ChatRoomTest(TestCase):
     def setUp(self):
@@ -91,6 +88,7 @@ class ChatRoomTest(TestCase):
     def test_chat_room_str(self):
         self.assertEqual(str(self.chat_room), 'Test Chat Room')
 
+
 class InvitationTest(TestCase):
     def setUp(self):
         self.inviter = CustomUser.objects.create_user(
@@ -111,6 +109,7 @@ class InvitationTest(TestCase):
 
     def test_invitation_expiration(self):
         self.assertIsNotNone(self.invitation.expires_at)
+
 
 class ChatMessageTest(TestCase):
     def setUp(self):

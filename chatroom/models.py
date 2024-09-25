@@ -37,7 +37,7 @@ class Message(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.sender}: {self.message} at {self.timestamp}"
+        return f"{self.sender.first_name} {self.sender.last_name}: {self.message} at {self.timestamp}"
 
 
 def get_expiration_date():
