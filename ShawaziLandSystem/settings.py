@@ -190,11 +190,11 @@ if google_credentials_json:
         GOOGLE_VISION_CREDENTIALS = service_account.Credentials.from_service_account_info(
             google_credentials_dict
         )
-        print("Google Vision credentials loaded successfully.")
+       
     except json.JSONDecodeError as e:
-        print(f"Error loading Google Vision credentials JSON: {e}")
+        pass
 else:
-    print("Google Vision credentials not found in environment variables.")
+    pass
 
 
 
