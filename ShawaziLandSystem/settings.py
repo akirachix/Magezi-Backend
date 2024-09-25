@@ -182,11 +182,7 @@ SMSLEOPARD_API_URL = os.getenv('SMSLEOPARD_API_URL',"")
 SMSLEOPARD_ACCESS_TOKEN = os.getenv('SMSLEOPARD_ACCESS_TOKEN',"")
 
 load_dotenv()
-# DEFAULT_VALUE = json.dumps({"type":"one"})
 
-# GOOGLE_VISION_CREDENTIALS = os.getenv('GOOGLE_VISION_CREDENTIALS',DEFAULT_VALUE)
-# if GOOGLE_VISION_CREDENTIALS:
-#     GOOGLE_VISION_CREDENTIALS = json.loads(GOOGLE_VISION_CREDENTIALS)
 google_credentials_json = os.getenv("GOOGLE_VISION_CREDENTIALS")
 if google_credentials_json:
     try:
