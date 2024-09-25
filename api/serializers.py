@@ -8,6 +8,25 @@ from django.contrib.auth import get_user_model
 import phonenumbers
 from users.models import CustomUser
 from chatroom.models import Room
+from rest_framework import serializers
+from chatroom.models import ChatMessage, Invitation, ChatRoom
+class ChatMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChatMessage
+        fields = ['id', 'room', 'user', 'content', 'timestamp']
+        read_only_fields = ['user', 'timestamp']
+class InvitationSerializer(serializers.ModelSerializer):
+    invited_by = serializers.StringRelatedField(read_only=True)
+    class Meta:
+        model = Invitation
+        fields = ['id', 'first_name', 'last_name', 'phone_number', 'created_at', 'expires_at']
+        read_only_fields = ['created_at', 'expires_at']
+class ChatRoomSerializer(serializers.ModelSerializer):
+    users = serializers.StringRelatedField(many=True)
+    class Meta:
+        model = ChatRoom
+        fields = ['id', 'name', 'users']
+        read_only_fields = ['users']
 
 User = get_user_model()
 
@@ -155,6 +174,24 @@ class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
         fields = '__all__'    
+
+class ChatMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChatMessage
+        fields = ['id', 'room', 'user', 'content', 'timestamp']
+        read_only_fields = ['user', 'timestamp']
+class InvitationSerializer(serializers.ModelSerializer):
+    invited_by = serializers.StringRelatedField(read_only=True)
+    class Meta:
+        model = Invitation
+        fields = ['id', 'first_name', 'last_name', 'phone_number', 'created_at', 'expires_at']
+        read_only_fields = ['created_at', 'expires_at']
+class ChatRoomSerializer(serializers.ModelSerializer):
+    users = serializers.StringRelatedField(many=True)
+    class Meta:
+        model = ChatRoom
+        fields = ['id', 'name', 'users']
+        read_only_fields = ['users']
 
 
 

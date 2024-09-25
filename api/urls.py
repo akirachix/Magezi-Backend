@@ -4,7 +4,11 @@ from agreements import views
 from .views import AgreementDetailView, Create_Room, RoomCreateView, Index_View, Login_View, Message_View,otp_verification, AgreementsView, CheckBlockchainView, LandListView,LandDetailView, LandMapDetailView, LandMapListView,  RegisteredUsersView,  TransactionsDetailView, TransactionsListView, UserProfileAPIView, forgot_password, login_user, logout_user, password_reset_confirm, reset_password, user_create
 from api import views
 from.views import RoomCreateView
-
+from django.urls import path, re_path
+from api.views import ChatMessageListCreateView, SendInvitationView, UserListView
+from chatroom import consumers
+from api.views import chat_room
+from . import views
 
 
 
@@ -34,11 +38,18 @@ urlpatterns = [
     path('login/', Login_View, name='login'),
     path('create-room/', RoomCreateView.as_view(), name='create_room'),
     path('room/<str:room_name>/', Message_View, name='messages'),
+    path('messages/', ChatMessageListCreateView.as_view(), name='chat_message_list_create'),
+    path('chats/message/', ChatMessageListCreateView.as_view(), name='chat_message_create'),
+    path('send_invitation/', SendInvitationView.as_view(), name='send_invitation'),
+    path('users/', UserListView.as_view(), name='user-list'),
+    path('chat/<str:room_name>/', chat_room, name='chat_room'),
 
 
   
 ]
 
-
+websocket_urlpatterns = [
+    re_path(r'ws/chat/(?P<user_id>\w+)/$', consumers.ChatConsumer.as_asgi()),
+]
  
 
