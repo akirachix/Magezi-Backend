@@ -62,7 +62,10 @@ from datetime import timedelta
 import requests
 
 
-client = vision.ImageAnnotatorClient(credentials=settings.GOOGLE_VISION_CREDENTIALS)
+if settings.GOOGLE_VISION_CREDENTIALS is not None:
+    client = vision.ImageAnnotatorClient(credentials=settings.GOOGLE_VISION_CREDENTIALS)
+else:
+    raise ValueError("GOOGLE_VISION_CREDENTIALS is not set in the settings.")
 
 
 User = get_user_model()
