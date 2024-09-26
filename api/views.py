@@ -737,11 +737,11 @@ class ChatMessageListCreateView(APIView):
         username = request.query_params.get('username')
         if not room_name:
             return Response({'error': 'room_name parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
         chat_room = get_object_or_404(ChatRoom, name=room_name)
-        messages = ChatMessage.objects.filter(user_username=username)
-        if username:
-            messages = messages.filter(user__username=username)
+        messages = ChatMessage.objects.filter(user__username=username) if username else ChatMessage.objects.all()
         messages = messages.order_by('timestamp')
+        
         messages_data = [
             {
                 'user': message.user.username,
@@ -751,22 +751,26 @@ class ChatMessageListCreateView(APIView):
             for message in messages
         ]
         return Response({'messages': messages_data}, status=status.HTTP_200_OK)
+
     def post(self, request):
         message_content = request.data.get('message')
         recipient_id = request.data.get('recipient_id')
         room_name = request.data.get('room_name')
+
         if not message_content or not recipient_id or not room_name:
             return Response({'error': 'message, recipient_id, and room_name are required'}, status=status.HTTP_400_BAD_REQUEST)
-        chat_room, _ = ChatRoom.objects.get_or_create(name=room_name)
-        message = ChatMessage.objects.create(room=chat_room, user=None, content=message_content)
+
         message_data = {
             'user': "Guest",
             'message': message_content,
-            'timestamp': message.timestamp.isoformat(),
+            'timestamp': now().isoformat(),  
             'recipient_id': recipient_id,
         }
+
         self.publish_message(message_data)
+
         return Response(message_data, status=status.HTTP_201_CREATED)
+
     def publish_message(self, message):
         try:
             room_group_name = f'chat_{message["recipient_id"]}'
