@@ -21,6 +21,23 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
+      - name: Set up Google Cloud Vision Credentials
+        env:
+      GOOGLE_VISION_CREDENTIALS: '{
+      "type": "service_account",
+      "project_id": "landtransaction",
+      "private_key_id": "5ed998c851233d9a50337d5cae0ef492d9f0d2f5",
+      "private_key": "-----BEGIN PRIVATE KEY-----MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCzEHtr0lu415AxkKQR4NHkVd/GvnM+ycD3wRRZ5eTTKVkcLDmCEiz9W9kTiLXzh8LK19sP4xHVfhegDiwNrcBOvxUomkqSkN7TyKbbuTiwGQBRuD+J568q7tetG6wq9L+H/nEm3H/KdpWmtKAHvNaazDbt/B+osJ9rcPMkiaVIJpYLVfVR8fO9k6KrZhsdIjes+Rt8LMjtfjO1fUhEH4fGIZNl1DDFp0tWtS93zu0K3IclgBHWg5+wfPyXGE4f6NzpSVC2imaVtGjKgkrbYM6u0rDTQaNVXdLuNqRe8PbWigdUEkjweBQzVAxDaPpncmQCj9QNbQRLyL4y94mR7XYlAgMBAAECggEAT2+86QC5iv8qKyrY9ktvoaWM79yWQKD9N4vSrOzlPd4Gd46Q9oh8p+rimp1X5pDwE899kYcw5q6Y6XrQBUNy4Bw51TjZYzrcd0R47Vm2cbytnRMpMNL0rQ2m5Vc04huQilKQvOYt1NIVoo5XvgcCh0qYBayHGO0908qYOrnLdn1VGXZ4jh+aToogLBNEIMcA4A/qREhcGnylt/pzJ3dTNolnUkiZoUDRM9YEIC0YEvExVEkM2rN07Y3lXsm/rMqqu9xDYvRp0Ghq0SjFFZ3ww2q2RioJ8DmsReaH0xixr+s1/s4epruuK+Oq998UYrA/qUWnxTxD3lywbsVH34XDYwKBgQDn7oGUGsQFnEX/mK1x2j5jHKhR3QLrw+oxUHMXI/O6IxX+Il2553XQrzYQ8SaaFXlQ2JaqtuRGpMCriQCmtl7kMNn1pl3/ovRUbzsBRUtrzfLzwQYRsMrS8VRrXC2kH9/lUbpxKsXG1bWDuZA79J5ednRRNcTFVx+VQe5gcAznQwKBgQDFpYEfEcy2OoSLeAWoNWvQK1jvGGAxhKu9/WZ6j/aGgTbhO9aMViOdmL3MxZP6LvnfTfgsJMQyXlyFNiEARlG7adx2yx/RKdNCg1rZwYUMAuOSUp5T8ki9oFMNKxGl2zY1NFoFxbPPClBkahyu4gP8PExRfoaK91Cn02m47tPSdwKBgEv6QO6gmghweinR/Ten0/op4CX5LcTISEbhYOJ6v5QBfGnlHikRXvH/A8onBYtCb5yBZ1IDWeKehBNtbQ4v/gPo0O39Exv0aO/kBENVTPDC5czeNbvD252guxP0fWsfmfwIevgpl+KcDbtaJZrOdrbhPReBcrVm5gzCLXHgIwn7AoGBAJBFFRF2zrUd1e5wN8Dm7cHQQmSUqHK84xgVxh4kw9C+tS6HnT5nCixZeAHnHvL6I07K/SJL3CLgGizqrAAlVDe3OERGVP06yIi+lSxqRBHWcgM253djXZF9W+I60/D7KICBrEyWWYABiVki07kcJciSwyqhbtg1WtyGR5/ERT5VAoGBAMiBW+tKauXzEYgdHV+yLJVNpnFs3ZrP9O+0xpf+LtjBIGl6h49RI5obJqDPXhGSFUUOm4Rl88mC06U4D1Fjsu54kSLYlhaDnW9cVX0uQB8cDUfDu5LyPPVy2wjpO/dcQ67usVXyDyyyoEA3e3lp8sXgUuEYjkhZVJo0IwzgXG9D\n-----END PRIVATE KEY-----",
+      "client_email": "valentinenkatha@landtransaction.iam.gserviceaccount.com",
+      "client_id": "116756943089666383490",
+      "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+      "token_uri": "https://oauth2.googleapis.com/token",
+      "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+      "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/valentinenkatha%40landtransaction.iam.gserviceaccount.com",
+      "universe_domain": "googleapis.com"
+    }'
+  run: |
+    echo "GOOGLE_VISION_CREDENTIALS set successfully."
       - name: Run migrations
         run: |
           python manage.py migrate
