@@ -15,6 +15,7 @@ from dotenv import load_dotenv, find_dotenv
 import dj_database_url
 from pathlib import Path
 from google.cloud import vision
+from google.oauth2 import service_account
 
 
 
@@ -181,11 +182,19 @@ SMSLEOPARD_API_URL = os.getenv('SMSLEOPARD_API_URL',"")
 SMSLEOPARD_ACCESS_TOKEN = os.getenv('SMSLEOPARD_ACCESS_TOKEN',"")
 
 load_dotenv()
-DEFAULT_VALUE = json.dumps({"type":"one"})
 
-GOOGLE_VISION_CREDENTIALS = os.getenv('GOOGLE_VISION_CREDENTIALS',DEFAULT_VALUE)
-if GOOGLE_VISION_CREDENTIALS:
-    GOOGLE_VISION_CREDENTIALS = json.loads(GOOGLE_VISION_CREDENTIALS)
+google_credentials_json = os.getenv("GOOGLE_VISION_CREDENTIALS")
+if google_credentials_json:
+    try:
+        google_credentials_dict = json.loads(google_credentials_json)
+        GOOGLE_VISION_CREDENTIALS = service_account.Credentials.from_service_account_info(
+            google_credentials_dict
+        )
+       
+    except json.JSONDecodeError as e:
+        pass
+else:
+    pass
 
 
 
