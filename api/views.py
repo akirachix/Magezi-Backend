@@ -45,10 +45,39 @@ from .serializers import (
 )
 from django.shortcuts import render
 
-GOOGLE_VISION_CREDENTIALS = settings.GOOGLE_VISION_CREDENTIALS
-credentials =  vision.ImageAnnotatorClient(credentials=GOOGLE_VISION_CREDENTIALS)
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from django.conf import settings
+from django.shortcuts import get_object_or_404, render
+from django.contrib.auth.models import User
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+import pika
+import json
+import logging
+from chatroom.models import ChatRoom, ChatMessage
+from django.utils.timezone import now
+from datetime import timedelta
+import requests
 
-
+def get_google_vision_client():
+    google_credentials_json = settings.GOOGLE_VISION_CREDENTIALS
+    if google_credentials_json:
+        try:
+            google_credentials_dict = json.loads(google_credentials_json)
+            credentials = service_account.Credentials.from_service_account_info(google_credentials_dict)
+            return vision.ImageAnnotatorClient(credentials=credentials)
+        except json.JSONDecodeError as e:
+            print(f"Error loading Google Vision credentials JSON: {e}")
+    else:
+        print("Google Vision credentials not found in environment variables.")
+    return None
+client = get_google_vision_client()
+if client:
+    pass
+else:
+    pass
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -351,11 +380,7 @@ class RegisteredUsersView(APIView):
 
 class UserListView(generics.ListAPIView):
     queryset = CustomUser.objects.all()
-    serializer_class = CustomUserSerializer    
-
-    
-
-
+    serializer_class = CustomUserSerializer      
 
 
 
@@ -698,7 +723,6 @@ def Index_View(request):
     return render(request, 'index.html')
 
 class RoomCreateView(APIView):
-    # @csrf_exempt
     def post(self, request):
         serializer = RoomSerializer(data=request.data)
         if serializer.is_valid():
@@ -711,4 +735,112 @@ class RoomCreateView(APIView):
 
 
 
+logger = logging.getLogger(__name__)
+class UserListView(APIView):
+    def get(self, request):
+        users = User.objects.all()
+        user_data = [{'id': user.id, 'username': user.username} for user in users]
+        return Response({'users': user_data}, status=status.HTTP_200_OK)
+def chat_message_view(request):
+    users = User.objects.all()
+    return render(request, 'chat/chat_message.html', {'users': users})
 
+class ChatMessageListCreateView(APIView):
+    def get(self, request):
+        room_name = request.query_params.get('room_name')
+        username = request.query_params.get('username')
+        if not room_name:
+            return Response({'error': 'room_name parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        chat_room = get_object_or_404(ChatRoom, name=room_name)
+        messages = ChatMessage.objects.filter(user__username=username) if username else ChatMessage.objects.all()
+        messages = messages.order_by('timestamp')
+        
+        messages_data = [
+            {
+                'user': message.user.username,
+                'message': message.content,
+                'timestamp': message.timestamp.isoformat()
+            }
+            for message in messages
+        ]
+        return Response({'messages': messages_data}, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        message_content = request.data.get('message')
+        recipient_id = request.data.get('recipient_id')
+        room_name = request.data.get('room_name')
+
+        if not message_content or not recipient_id or not room_name:
+            return Response({'error': 'message, recipient_id, and room_name are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        message_data = {
+            'user': "Guest",
+            'message': message_content,
+            'timestamp': now().isoformat(),  
+            'recipient_id': recipient_id,
+        }
+
+        self.publish_message(message_data)
+
+        return Response(message_data, status=status.HTTP_201_CREATED)
+
+    def publish_message(self, message):
+        try:
+            room_group_name = f'chat_{message["recipient_id"]}'
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                room_group_name,
+                {
+                    'type': 'chat_message',
+                    'message': {
+                        'user': message['user'],
+                        'message': message['message'],
+                        'timestamp': message['timestamp'],
+                        'recipient_id': message['recipient_id'],
+                    }
+                }
+            )
+            logger.info(f"Message sent to WebSocket group {room_group_name}: {message}")
+        except Exception as e:
+            logger.error(f"Error sending message to WebSocket: {e}")
+class SendInvitationView(APIView):
+    def post(self, request):
+        first_name = request.data.get('first_name')
+        last_name = request.data.get('last_name')
+        phone_number = request.data.get('phone_number')
+        if not all([first_name, last_name, phone_number]):
+            return Response({'error': 'First name, last name, and phone number are required'}, status=status.HTTP_400_BAD_REQUEST)
+        expiry_date = now() + timedelta(days=2)
+        expiry_date_formatted = expiry_date.strftime("%Y-%m-%d %H:%M:%S")
+        join_url = f"{settings.BASE_URL}/join/"
+        message = f"Hello {first_name} {last_name}, you've been invited to join Shawazi. This invitation expires on {expiry_date_formatted}. Click here to join: {join_url}"
+        sms_response = self.send_sms(phone_number, message)
+        if 'error' in sms_response:
+            logger.error(f"SMS sending failed: {sms_response['error']}")
+            return Response({'status': 'Invitation created, but SMS failed', 'sms_response': sms_response}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'status': 'Invitation SMS sent', 'sms_response': sms_response, 'expires_at': expiry_date_formatted}, status=status.HTTP_200_OK)
+    def send_sms(self, phone_number, message):
+        headers = {
+            "Authorization": f"Basic {settings.SMSLEOPARD_ACCESS_TOKEN}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "source": "Akirachix",
+            "message": message,
+            "destination": [{"number": phone_number}],
+        }
+        try:
+            response = requests.post(settings.SMSLEOPARD_API_URL, json=payload, headers=headers)
+            response.raise_for_status()
+            logger.info(f"SMS sent successfully to {phone_number}")
+            return response.json()
+        except requests.RequestException as e:
+            logger.error(f"SMS sending failed: {str(e)}")
+            return {"error": str(e)}
+def chat_room(request, room_name):
+    users = User.objects.all()
+    return render(request, 'chat_room.html', {
+        'room_name': room_name,
+        'users': users
+    })

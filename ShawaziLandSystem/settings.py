@@ -15,6 +15,7 @@ from dotenv import load_dotenv, find_dotenv
 import dj_database_url
 from pathlib import Path
 from google.cloud import vision
+from google.oauth2 import service_account
 
 
 
@@ -180,19 +181,15 @@ OPENSTREETMAP_API_TOKEN = os.getenv('OPENSTREETMAP_API_TOKEN',"")
 SMSLEOPARD_API_URL = os.getenv('SMSLEOPARD_API_URL',"")
 SMSLEOPARD_ACCESS_TOKEN = os.getenv('SMSLEOPARD_ACCESS_TOKEN',"")
 
-load_dotenv()
-DEFAULT_VALUE = json.dumps({"type":"one"})
-
-GOOGLE_VISION_CREDENTIALS = os.getenv('GOOGLE_VISION_CREDENTIALS',DEFAULT_VALUE)
-if GOOGLE_VISION_CREDENTIALS:
-    GOOGLE_VISION_CREDENTIALS = json.loads(GOOGLE_VISION_CREDENTIALS)
-
-
-
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
     load_dotenv(ENV_FILE)
+
+
+load_dotenv()
+
+GOOGLE_VISION_CREDENTIALS = os.getenv('GOOGLE_VISION_CREDENTIALS')
 
 
 AUTH0_DOMAIN = os.environ.get("AUTH0_DOMAIN","")

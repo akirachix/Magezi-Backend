@@ -8,14 +8,33 @@ from django.contrib.auth import get_user_model
 import phonenumbers
 from users.models import CustomUser
 from chatroom.models import Room
-
-User = get_user_model()
-
-
 from rest_framework import serializers
-from django.contrib.auth import get_user_model
+from chatroom.models import ChatMessage, Invitation, ChatRoom
 from django.contrib.auth.models import Permission
-import phonenumbers
+
+class ChatMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChatMessage
+        fields = ['id', 'room', 'user', 'content', 'timestamp']
+        read_only_fields = ['user', 'timestamp']
+class InvitationSerializer(serializers.ModelSerializer):
+    invited_by = serializers.StringRelatedField(read_only=True)
+    class Meta:
+        model = Invitation
+        fields = ['id', 'first_name', 'last_name', 'phone_number', 'created_at', 'expires_at']
+        read_only_fields = ['created_at', 'expires_at']
+class ChatRoomSerializer(serializers.ModelSerializer):
+    users = serializers.StringRelatedField(many=True)
+    class Meta:
+        model = ChatRoom
+        fields = ['id', 'name', 'users']
+        read_only_fields = ['users']
+
+class RoomSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Room
+        fields = '__all__' 
+
 
 User = get_user_model()
 
@@ -150,11 +169,9 @@ class UserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return CustomUser.objects.create_user(**validated_data)
-    
-class RoomSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Room
-        fields = '__all__'    
+      
+
+
 
 
 
