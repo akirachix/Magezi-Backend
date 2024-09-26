@@ -61,8 +61,23 @@ from django.utils.timezone import now
 from datetime import timedelta
 import requests
 
-
-client = vision.ImageAnnotatorClient(credentials=settings.GOOGLE_VISION_CREDENTIALS)
+def get_google_vision_client():
+    google_credentials_json = settings.GOOGLE_VISION_CREDENTIALS
+    if google_credentials_json:
+        try:
+            google_credentials_dict = json.loads(google_credentials_json)
+            credentials = service_account.Credentials.from_service_account_info(google_credentials_dict)
+            return vision.ImageAnnotatorClient(credentials=credentials)
+        except json.JSONDecodeError as e:
+            print(f"Error loading Google Vision credentials JSON: {e}")
+    else:
+        print("Google Vision credentials not found in environment variables.")
+    return None
+client = get_google_vision_client()
+if client:
+    pass
+else:
+    pass
 
 User = get_user_model()
 logger = logging.getLogger(__name__)

@@ -181,27 +181,15 @@ OPENSTREETMAP_API_TOKEN = os.getenv('OPENSTREETMAP_API_TOKEN',"")
 SMSLEOPARD_API_URL = os.getenv('SMSLEOPARD_API_URL',"")
 SMSLEOPARD_ACCESS_TOKEN = os.getenv('SMSLEOPARD_ACCESS_TOKEN',"")
 
-load_dotenv()
-
-google_credentials_json = os.getenv('GOOGLE_VISION_CREDENTIALS')
-if google_credentials_json:
-    try:
-        google_credentials_dict = json.loads(google_credentials_json)
-        GOOGLE_VISION_CREDENTIALS = service_account.Credentials.from_service_account_info(
-            google_credentials_dict
-        )
-       
-    except json.JSONDecodeError as e:
-        pass
-else:
-    pass
-
-
-
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
     load_dotenv(ENV_FILE)
+
+
+load_dotenv()
+
+GOOGLE_VISION_CREDENTIALS = os.getenv('GOOGLE_VISION_CREDENTIALS')
 
 
 AUTH0_DOMAIN = os.environ.get("AUTH0_DOMAIN","")
