@@ -366,11 +366,7 @@ class RegisteredUsersView(APIView):
 
 class UserListView(generics.ListAPIView):
     queryset = CustomUser.objects.all()
-    serializer_class = CustomUserSerializer    
-
-    
-
-
+    serializer_class = CustomUserSerializer      
 
 
 
@@ -713,7 +709,6 @@ def Index_View(request):
     return render(request, 'index.html')
 
 class RoomCreateView(APIView):
-    # @csrf_exempt
     def post(self, request):
         serializer = RoomSerializer(data=request.data)
         if serializer.is_valid():
@@ -735,6 +730,7 @@ class UserListView(APIView):
 def chat_message_view(request):
     users = User.objects.all()
     return render(request, 'chat/chat_message.html', {'users': users})
+
 class ChatMessageListCreateView(APIView):
     def get(self, request):
         room_name = request.query_params.get('room_name')
