@@ -569,8 +569,6 @@ class TransactionsListView(APIView):
         if image_key not in request.FILES:
             return Response({"error": f"{user_type.capitalize()} image must be provided"}, status=status.HTTP_400_BAD_REQUEST)
         image_file = request.FILES[image_key]
-
-        
         def extract_data_from_image(image_file):
             try:
                 image_content = image_file.read()
@@ -614,44 +612,40 @@ class TransactionsListView(APIView):
                     continue
             if date_obj is None:
                 return Response({"error": "Date format is incorrect"}, status=status.HTTP_400_BAD_REQUEST)
-            
             formatted_date = date_obj.strftime('%Y-%m-%d')
             agreement_id = request.data.get('agreement_id')
             if agreement_id:
-                agreement = get_object_or_404(Agreements, agreement_id=agreement_id) 
+                agreement = get_object_or_404(Agreements, pk=agreement_id)
                 seller_instance = agreement.seller
                 buyer_instance = agreement.buyer
-                lawyer_instance = agreement.lawyer 
+                lawyer_instance = agreement.lawyer
             else:
-                agreement = Agreements.objects.create(
-                    contract_duration=12,
-                    agreed_amount=amount,
-                    installment_schedule="Monthly",
-                    penalties_interest_rate=5,
-                    down_payment=0,
-                )
-            try:
-                transaction, created = Transactions.objects.update_or_create(
+                return Response({"error": "Agreement ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+            transaction = Transactions.objects.filter(unique_code=data['code'], date=formatted_date, agreement=agreement).first()
+            if transaction:
+               
+                if transaction.amount == amount:
+                    transaction.status = 'Complete'
+                    message = "Transaction updated and marked as complete"
+                else:
+                    transaction.status = 'Rejected'
+                    message = "Transaction updated and marked as rejected"
+                transaction.save()
+            else:
+               
+                transaction = Transactions.objects.create(
                     unique_code=data['code'],
-                    defaults={
-                        'amount': amount,
-                        'date': timezone.now(),
-                        'status': 'complete',  
-                        'agreement': agreement,
-                        'seller':seller_instance,
-                        'buyer':buyer_instance,
-                        'lawyer':lawyer_instance  
-                    }
+                    amount=amount,
+                    date=date_obj,
+                    status='Pending',  
+                    agreement=agreement,
+                    seller=seller_instance if user_type == 'seller' else None,
+                    buyer=buyer_instance if user_type == 'buyer' else None,
+                    lawyer=lawyer_instance
                 )
-                
-                agreement.update_on_transaction(amount)
-                message = "Transaction created and marked as complete" if created else "Transaction updated and marked as complete"
-            except Exception as e:
-                logger.error(f"Failed to save transaction: {str(e)}")
-                return Response({"error": f"Failed to save transaction: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            return Response({"message": message, "amount": amount}, status=status.HTTP_201_CREATED)
-        else:
-            return Response({"error": "Could not extract all required information from the image"}, status=status.HTTP_400_BAD_REQUEST)
+                message = "Transaction created and marked as pending"
+            return Response({"message": message, "amount": amount, "status": transaction.status}, status=status.HTTP_201_CREATED)
+        return Response({"error": "Could not extract all required information from the image"}, status=status.HTTP_400_BAD_REQUEST)
         
 class TransactionsDetailView(APIView):
     def get(self, request, id):
