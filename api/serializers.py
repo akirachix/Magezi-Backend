@@ -113,19 +113,14 @@ class LandDetailSerializer(serializers.ModelSerializer):
 
 
 class AgreementsSerializer(serializers.ModelSerializer):
-    seller_first_name = serializers.CharField(source='seller.first_name', read_only=True)
-    buyer_first_name = serializers.CharField(source='buyer.first_name', read_only=True)
-    lawyer_first_name = serializers.CharField(source='lawyer.first_name', read_only=True)
-
     class Meta:
         model = Agreements
-        fields = [
-            'agreement_id','parcel_number','seller','buyer','lawyer','seller_first_name','buyer_first_name',
-            'lawyer_first_name','date_created','contract_duration','agreed_amount','installment_schedule',
-            'penalties_interest_rate','down_payment','buyer_agreed','seller_agreed','terms_and_conditions',
-            'transaction_count','remaining_amount','total_amount_made','agreement_hash','previous_hash',
-            'transactions_history',
-        ]
+        fields = ['agreement_id', 'parcel_number', 'seller', 'buyer', 'lawyer', 'date_created',
+                  'contract_duration', 'agreed_amount', 'installment_schedule',
+                  'penalties_interest_rate', 'down_payment', 'buyer_agreed',
+                  'seller_agreed', 'terms_and_conditions', 'transaction_count',
+                  'remaining_amount', 'total_amount_made', 'agreement_hash', 'previous_hash',
+                  'transactions_history']
 
         
     def validate_parcel_number(self, value):
@@ -174,4 +169,9 @@ class UserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return CustomUser.objects.create_user(**validated_data)
-    
+      
+
+
+
+
+
