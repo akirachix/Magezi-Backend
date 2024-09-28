@@ -553,29 +553,6 @@ class AgreementDetailView(APIView):
             return Response({"error": "Agreement not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
-
-
-class AgreementResponseView(APIView):
-    def post(self, request, id):
-        agreement = Agreements.objects.filter(agreement_id=id).first()
-        if not agreement:
-            return Response({"detail": "Agreement not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        buyer_agreed = request.data.get('buyer_agreed', agreement.buyer_agreed)
-        seller_agreed = request.data.get('seller_agreed', agreement.seller_agreed)
-
-
-        agreement.buyer_agreed = buyer_agreed
-        agreement.seller_agreed = seller_agreed
-        agreement.save()
-
-        return Response({
-            "detail": "Agreement response submitted.",
-            "buyer_agreed": agreement.buyer_agreed,
-            "seller_agreed": agreement.seller_agreed
-        }, status=status.HTTP_200_OK)
-
-
 @api_view(['PATCH'])
 def update_agreement(request, agreement_id):
     try:

@@ -1,7 +1,7 @@
 from turtle import home
 from django.urls import path
 from agreements import views
-from .views import AgreementDetailView, Create_Room, RoomCreateView, Index_View, Login_View, Message_View,otp_verification, AgreementsView, CheckBlockchainView, LandListView,LandDetailView, LandMapDetailView, LandMapListView,  RegisteredUsersView,  TransactionsDetailView, TransactionsListView, UserProfileAPIView, forgot_password, login_user, logout_user, password_reset_confirm, reset_password, update_agreement, user_create,AgreementResponseView
+from .views import AgreementDetailView, Create_Room, RoomCreateView, Index_View, Login_View, Message_View,otp_verification, AgreementsView, CheckBlockchainView, LandListView,LandDetailView, LandMapDetailView, LandMapListView,  RegisteredUsersView,  TransactionsDetailView, TransactionsListView, UserProfileAPIView, forgot_password, login_user, logout_user, password_reset_confirm, reset_password, update_agreement, user_create
 from api import views
 from.views import RoomCreateView
 from django.urls import path, re_path
@@ -30,7 +30,6 @@ urlpatterns = [
     path('land-map/', LandMapListView.as_view({'get': 'list', 'post': 'create'}), name='land-map-view'), 
     path('agreements/', AgreementsView.as_view(), name='agreements_list'),
     path('count/agreements/', AgreementsView.as_view(), name='agreements_list'),
-    path('agreements/<int:id>/response/', AgreementResponseView.as_view(), name='agreement_response'),
     path('agreements/<int:agreement_id>/', update_agreement, name='update-agreement'),
     path('agreements/<int:id>/', AgreementDetailView.as_view(), name='agreement_detail'),
     path("transactions/",TransactionsListView.as_view(), name="transactions_list_view"),
