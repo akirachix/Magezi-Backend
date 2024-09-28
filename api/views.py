@@ -553,6 +553,23 @@ class AgreementDetailView(APIView):
             return Response({"error": "Agreement not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
+@api_view(['PATCH'])
+def update_agreement(request, agreement_id):
+    try:
+        agreement = Agreements.objects.get(agreement_id=agreement_id)
+    except Agreements.DoesNotExist:
+        return Response({"error": "Agreement not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    if 'buyer_agreed' in request.data:
+        agreement.buyer_agreed = request.data['buyer_agreed']
+    if 'seller_agreed' in request.data:
+        agreement.seller_agreed = request.data['seller_agreed']
+
+    agreement.save()
+    serializer = AgreementsSerializer(agreement)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 
 class TransactionsListView(APIView):
     def get(self, request):
@@ -798,40 +815,46 @@ class ChatMessageListCreateView(APIView):
             logger.info(f"Message sent to WebSocket group {room_group_name}: {message}")
         except Exception as e:
             logger.error(f"Error sending message to WebSocket: {e}")
+
 class SendInvitationView(APIView):
     def post(self, request):
         first_name = request.data.get('first_name')
         last_name = request.data.get('last_name')
         phone_number = request.data.get('phone_number')
+
         if not all([first_name, last_name, phone_number]):
             return Response({'error': 'First name, last name, and phone number are required'}, status=status.HTTP_400_BAD_REQUEST)
+
         expiry_date = now() + timedelta(days=2)
         expiry_date_formatted = expiry_date.strftime("%Y-%m-%d %H:%M:%S")
-        join_url = f"{settings.BASE_URL}/join/"
-        message = f"Hello {first_name} {last_name}, you've been invited to join Shawazi. This invitation expires on {expiry_date_formatted}. Click here to join: {join_url}"
-        sms_response = self.send_sms(phone_number, message)
+        message = f"Hello {first_name} {last_name}, you've been invited to join Shawazi. This invitation expires on {expiry_date_formatted}. Please check your app for more details."
+
+        sms_response = send_sms(phone_number, message)
         if 'error' in sms_response:
             logger.error(f"SMS sending failed: {sms_response['error']}")
             return Response({'status': 'Invitation created, but SMS failed', 'sms_response': sms_response}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
         return Response({'status': 'Invitation SMS sent', 'sms_response': sms_response, 'expires_at': expiry_date_formatted}, status=status.HTTP_200_OK)
-    def send_sms(self, phone_number, message):
-        headers = {
-            "Authorization": f"Basic {settings.SMSLEOPARD_ACCESS_TOKEN}",
-            "Content-Type": "application/json",
-        }
-        payload = {
-            "source": "Akirachix",
-            "message": message,
-            "destination": [{"number": phone_number}],
-        }
-        try:
-            response = requests.post(settings.SMSLEOPARD_API_URL, json=payload, headers=headers)
-            response.raise_for_status()
-            logger.info(f"SMS sent successfully to {phone_number}")
-            return response.json()
-        except requests.RequestException as e:
-            logger.error(f"SMS sending failed: {str(e)}")
-            return {"error": str(e)}
+
+def send_sms(phone_number, message):
+    headers = {
+        "Authorization": f"Basic {settings.SMSLEOPARD_ACCESS_TOKEN}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "source": "Akirachix",
+        "message": message,
+        "destination": [{"number": phone_number}],
+    }
+    try:
+        response = requests.post(settings.SMSLEOPARD_API_URL, json=payload, headers=headers)
+        response.raise_for_status()
+        logger.info(f"SMS sent successfully to {phone_number}")
+        return response.json()
+    except requests.RequestException as e:
+        logger.error(f"SMS sending failed: {str(e)}")
+        return {"error": str(e)}
+
 def chat_room(request, room_name):
     users = User.objects.all()
     return render(request, 'chat_room.html', {

@@ -111,9 +111,8 @@ class LandDetailSerializer(serializers.ModelSerializer):
             history['date_purchased'] = obj.date_purchased
         return history if history else None
 
-class AgreementsSerializer(serializers.ModelSerializer):
-    parcel_number = serializers.CharField(write_only=True)
 
+class AgreementsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Agreements
         fields = ['agreement_id', 'parcel_number', 'seller', 'buyer', 'lawyer', 'date_created',
@@ -122,6 +121,7 @@ class AgreementsSerializer(serializers.ModelSerializer):
                   'seller_agreed', 'terms_and_conditions', 'transaction_count',
                   'remaining_amount', 'total_amount_made', 'agreement_hash', 'previous_hash',
                   'transactions_history']
+
         
     def validate_parcel_number(self, value):
         """Ensure the parcel number exists in LandDetails."""
