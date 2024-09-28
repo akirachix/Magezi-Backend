@@ -564,7 +564,7 @@ class AgreementResponseView(APIView):
         buyer_agreed = request.data.get('buyer_agreed', agreement.buyer_agreed)
         seller_agreed = request.data.get('seller_agreed', agreement.seller_agreed)
 
-        # Update agreement status
+
         agreement.buyer_agreed = buyer_agreed
         agreement.seller_agreed = seller_agreed
         agreement.save()
