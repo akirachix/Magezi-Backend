@@ -576,6 +576,21 @@ class AgreementResponseView(APIView):
         }, status=status.HTTP_200_OK)
 
 
+@api_view(['PATCH'])
+def update_agreement(request, agreement_id):
+    try:
+        agreement = Agreements.objects.get(agreement_id=agreement_id)
+    except Agreements.DoesNotExist:
+        return Response({"error": "Agreement not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    if 'buyer_agreed' in request.data:
+        agreement.buyer_agreed = request.data['buyer_agreed']
+    if 'seller_agreed' in request.data:
+        agreement.seller_agreed = request.data['seller_agreed']
+
+    agreement.save()
+    serializer = AgreementsSerializer(agreement)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 
@@ -837,7 +852,6 @@ class SendInvitationView(APIView):
         expiry_date_formatted = expiry_date.strftime("%Y-%m-%d %H:%M:%S")
         message = f"Hello {first_name} {last_name}, you've been invited to join Shawazi. This invitation expires on {expiry_date_formatted}. Please check your app for more details."
 
-        # Send the invitation SMS
         sms_response = send_sms(phone_number, message)
         if 'error' in sms_response:
             logger.error(f"SMS sending failed: {sms_response['error']}")
