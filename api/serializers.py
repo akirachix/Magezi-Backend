@@ -120,7 +120,11 @@ class AgreementsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Agreements
         fields = [
-            'agreement_id','parcel_number','seller','buyer','lawyer','seller_first_name','buyer_first_name','lawyer_first_name','date_created','contract_duration','agreed_amount','installment_schedule','penalties_interest_rate','down_payment','buyer_agreed','seller_agreed','terms_and_conditions','transaction_count','remaining_amount','total_amount_made','agreement_hash','previous_hash','transactions_history',
+            'agreement_id','parcel_number','seller','buyer','lawyer','seller_first_name','buyer_first_name',
+            'lawyer_first_name','date_created','contract_duration','agreed_amount','installment_schedule',
+            'penalties_interest_rate','down_payment','buyer_agreed','seller_agreed','terms_and_conditions',
+            'transaction_count','remaining_amount','total_amount_made','agreement_hash','previous_hash',
+            'transactions_history',
         ]
 
         
