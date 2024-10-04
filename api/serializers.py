@@ -21,7 +21,7 @@ class InvitationSerializer(serializers.ModelSerializer):
     invited_by = serializers.StringRelatedField(read_only=True)
     class Meta:
         model = Invitation
-        fields = ['id', 'first_name', 'last_name', 'phone_number', 'created_at', 'expires_at']
+        fields = ['id', 'first_name', 'last_name', 'phone_number','invited_by', 'created_at', 'expires_at']
         read_only_fields = ['created_at', 'expires_at']
 class ChatRoomSerializer(serializers.ModelSerializer):
     users = serializers.StringRelatedField(many=True)
@@ -113,6 +113,8 @@ class LandDetailSerializer(serializers.ModelSerializer):
 
 
 class AgreementsSerializer(serializers.ModelSerializer):
+    parcel_number = serializers.CharField(write_only=True)
+    
     class Meta:
         model = Agreements
         fields = ['agreement_id', 'parcel_number', 'seller', 'buyer', 'lawyer', 'date_created',
@@ -131,12 +133,14 @@ class AgreementsSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         parcel_number = validated_data.pop('parcel_number')
-        land_detail = LandDetails.objects.get(parcel_number=parcel_number)
-        agreement = Agreements.objects.create(
-            parcel_number=land_detail,
-            **validated_data
-        )
+        try:
+            land_detail = LandDetails.objects.get(parcel_number=parcel_number)
+        except LandDetails.DoesNotExist:
+            raise serializers.ValidationError(f"No land detail found with parcel number {parcel_number}")
+        
+        agreement = Agreements.objects.create(parcel_number=land_detail, **validated_data)
         return agreement
+
 
 class TransactionsSerializer(serializers.ModelSerializer):
     class Meta:
