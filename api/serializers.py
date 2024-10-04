@@ -21,7 +21,7 @@ class InvitationSerializer(serializers.ModelSerializer):
     invited_by = serializers.StringRelatedField(read_only=True)
     class Meta:
         model = Invitation
-        fields = ['id', 'first_name', 'last_name', 'phone_number', 'created_at', 'expires_at']
+        fields = ['id', 'first_name', 'last_name', 'phone_number','invited_by', 'created_at', 'expires_at']
         read_only_fields = ['created_at', 'expires_at']
 class ChatRoomSerializer(serializers.ModelSerializer):
     users = serializers.StringRelatedField(many=True)

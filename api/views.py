@@ -821,9 +821,10 @@ class SendInvitationView(APIView):
         first_name = request.data.get('first_name')
         last_name = request.data.get('last_name')
         phone_number = request.data.get('phone_number')
+        invited_by = request.data.get('invited_by')
 
-        if not all([first_name, last_name, phone_number]):
-            return Response({'error': 'First name, last name, and phone number are required'}, status=status.HTTP_400_BAD_REQUEST)
+        if not all([first_name, last_name, phone_number,invited_by]):
+            return Response({'error': 'First name, last name, invited by and  phone number are required'}, status=status.HTTP_400_BAD_REQUEST)
 
         expiry_date = now() + timedelta(days=2)
         expiry_date_formatted = expiry_date.strftime("%Y-%m-%d %H:%M:%S")
