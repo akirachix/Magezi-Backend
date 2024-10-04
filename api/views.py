@@ -827,7 +827,7 @@ class SendInvitationView(APIView):
 
         expiry_date = now() + timedelta(days=2)
         expiry_date_formatted = expiry_date.strftime("%Y-%m-%d %H:%M:%S")
-        message = f"Hello {first_name} {last_name}, you've been invited to join Shawazi. This invitation expires on {expiry_date_formatted}. Please check your app for more details: https://pwa-shawazi-khaki.vercel.app"
+        message = f"Hello {first_name} {last_name}, you've been invited to join Shawazi. This invitation expires on {expiry_date_formatted}. Please check your app for more details:" + os.getenv("SHAWAZI_URL")
 
         sms_response = send_sms(phone_number, message)
         if 'error' in sms_response:
