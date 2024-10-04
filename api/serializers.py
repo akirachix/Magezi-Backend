@@ -114,6 +114,7 @@ class LandDetailSerializer(serializers.ModelSerializer):
 
 class AgreementsSerializer(serializers.ModelSerializer):
     parcel_number = serializers.CharField(write_only=True)
+    
     class Meta:
         model = Agreements
         fields = ['agreement_id', 'parcel_number', 'seller', 'buyer', 'lawyer', 'date_created',
