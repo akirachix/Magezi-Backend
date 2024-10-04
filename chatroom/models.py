@@ -53,7 +53,7 @@ class ChatRoom(models.Model):
 
 
 class Invitation(models.Model):
-    invited_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    invited_by = models.CharField(max_length=100)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     phone_number = models.CharField(max_length=20)
