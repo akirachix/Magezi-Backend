@@ -828,9 +828,7 @@ class SendInvitationView(APIView):
 
         expiry_date = now() + timedelta(days=2)
         expiry_date_formatted = expiry_date.strftime("%Y-%m-%d %H:%M:%S")
-        message = f"Hello {first_name} {last_name}, you've been invited to join Shawazi platform  by {invited_by}. This invitation expires on {expiry_date_formatted}. Please click here for more details:"
-        + os.getenv("SHAWAZI_URL")
-
+        message = f"Hello {first_name} {last_name}, you've been invited to join Shawazi platform  by {invited_by}. This invitation expires on {expiry_date_formatted}. kindly click here for more details:" + os.getenv("SHAWAZI_URL")
         sms_response = send_sms(phone_number, message)
         if 'error' in sms_response:
             logger.error(f"SMS sending failed: {sms_response['error']}")
