@@ -869,7 +869,7 @@ def chat_room(request, room_name):
 class NotifySellerView(APIView):
     def post(self, request, land_details_id):
         land = get_object_or_404(LandDetails, land_details_id=land_details_id)
-        seller_name = land.owner_name  # Using owner_name as the seller identifier
+        seller_name = land.owner_name  
 
         notifications = cache.get(f'notifications_{seller_name}', [])
 
@@ -887,20 +887,20 @@ class NotifySellerView(APIView):
         }, status=status.HTTP_201_CREATED)
 
 class GetNotificationsView(APIView):
-    
-    def get(self, request):
-        seller_name = request.user.username  # Assuming the authenticated user is the seller
-        notifications = cache.get(f'notifications_{seller_name}', [])
-        
-        return Response({'notifications': notifications})
+    def get(self, request, phone_number):
+        notifications = cache.get(f'notifications_{phone_number}', [])
+
+        return Response({
+            'status': 'success',
+            'notifications': notifications
+        }, status=status.HTTP_200_OK)
 
 class DeleteNotificationView(APIView):
     
 
     def post(self, request):
         notification_id = request.data.get('notification_id')
-        seller_name = request.user.username  # Assuming the authenticated user is the seller
-        
+        seller_name = request.user.username 
         notifications = cache.get(f'notifications_{seller_name}', [])
         
         notifications = [notif for notif in notifications if notif['id'] != notification_id]

@@ -44,7 +44,7 @@ urlpatterns = [
     path('users/', UserListView.as_view(), name='user-list'),
     path('chat/<str:room_name>/', chat_room, name='chat_room'),
     path('express-interest/<int:land_details_id>/', NotifySellerView.as_view(), name='express_interest'),
-    path('notifications/', GetNotificationsView.as_view(), name='get_notifications'),
+    path('notifications/<phone_number>/', GetNotificationsView.as_view(), name='get_notifications'),
     path('delete-notification/', DeleteNotificationView.as_view(), name='delete_notification'),
 
 
