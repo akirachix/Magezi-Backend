@@ -26,6 +26,9 @@ from django.contrib import messages
 from google.cloud import vision
 from google.oauth2 import service_account
 import json
+from django.core.cache import cache
+import uuid
+from datetime import datetime
 import os
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
@@ -55,6 +58,7 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 import pika
 import json
+
 import logging
 from chatroom.models import ChatRoom, ChatMessage
 from django.utils.timezone import now
@@ -861,3 +865,49 @@ def chat_room(request, room_name):
         'room_name': room_name,
         'users': users
     })
+
+class NotifySellerView(APIView):
+    def post(self, request, land_details_id):
+        land = get_object_or_404(LandDetails, land_details_id=land_details_id)
+        seller_name = land.owner_name  # Using owner_name as the seller identifier
+
+        notifications = cache.get(f'notifications_{seller_name}', [])
+
+        notifications.append({
+            'id': str(uuid.uuid4()),
+            'message': f"A buyer is interested in your land: {land.address}",
+            'created_at': datetime.now().isoformat(),
+        })
+
+        cache.set(f'notifications_{seller_name}', notifications)
+
+        return Response({
+            'status': 'success',
+            'message': 'Interest expressed successfully'
+        }, status=status.HTTP_201_CREATED)
+
+class GetNotificationsView(APIView):
+    
+    def get(self, request):
+        seller_name = request.user.username  # Assuming the authenticated user is the seller
+        notifications = cache.get(f'notifications_{seller_name}', [])
+        
+        return Response({'notifications': notifications})
+
+class DeleteNotificationView(APIView):
+    
+
+    def post(self, request):
+        notification_id = request.data.get('notification_id')
+        seller_name = request.user.username  # Assuming the authenticated user is the seller
+        
+        notifications = cache.get(f'notifications_{seller_name}', [])
+        
+        notifications = [notif for notif in notifications if notif['id'] != notification_id]
+        
+        cache.set(f'notifications_{seller_name}', notifications)
+        
+        return Response({
+            'status': 'success',
+            'message': 'Notification deleted'
+        }, status=status.HTTP_200_OK)
