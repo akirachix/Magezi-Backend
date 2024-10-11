@@ -1,6 +1,6 @@
 from django.urls import path
 from agreements import views
-from .views import AgreementDetailView, Create_Room, RoomCreateView, Index_View, Login_View, Message_View,otp_verification, AgreementsView, CheckBlockchainView, LandListView,LandDetailView, LandMapDetailView, LandMapListView,  RegisteredUsersView,  TransactionsDetailView, TransactionsListView, UserProfileAPIView, forgot_password, login_user, logout_user, password_reset_confirm, reset_password, update_agreement, user_create,NotifySellerView, GetNotificationsView, DeleteNotificationView
+from .views import AgreementDetailView, Create_Room, RoomCreateView, Index_View, Login_View, Message_View,otp_verification, AgreementsView, CheckBlockchainView, LandListView,LandDetailView, LandMapDetailView, LandMapListView,  RegisteredUsersView,  TransactionsDetailView, TransactionsListView, UserProfileAPIView, forgot_password, login_user, logout_user, password_reset_confirm, reset_password, update_agreement, user_create, NotifySellerView, AcceptInterestView
 from api import views
 from.views import RoomCreateView
 from django.urls import path, re_path
@@ -43,9 +43,10 @@ urlpatterns = [
     path('send_invitation/', SendInvitationView.as_view(), name='send_invitation'),
     path('users/', UserListView.as_view(), name='user-list'),
     path('chat/<str:room_name>/', chat_room, name='chat_room'),
-    path('express-interest/<int:land_details_id>/', NotifySellerView.as_view(), name='express_interest'),
-    path('notifications/<phone_number>/', GetNotificationsView.as_view(), name='get_notifications'),
-    path('delete-notification/', DeleteNotificationView.as_view(), name='delete_notification'),
+    path('notify-seller/<int:land_details_id>/', NotifySellerView.as_view(), name='notify-seller'),
+    path('accept-interest/', AcceptInterestView.as_view(), name='accept-interest'),
+    
+    
 
 
   
