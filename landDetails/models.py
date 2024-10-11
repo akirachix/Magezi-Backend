@@ -4,6 +4,7 @@ from django.db import models
 class LandDetails(models.Model):
     land_details_id = models.AutoField(primary_key=True)
     parcel_number = models.CharField(max_length=255, unique=True)
+    interested = models.BooleanField(default=False)
     date_acquired = models.DateField()
     land_description = models.TextField(default='No description provided')
     price = models.FloatField(default=0.0)
