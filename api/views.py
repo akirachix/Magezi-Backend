@@ -936,3 +936,10 @@ class AcceptInterestView(APIView):
         }, status=status.HTTP_200_OK)
 
 
+class GetNotificationsView(APIView):
+    def get(self, request, phone_number):
+        notifications = cache.get(f'notifications_{phone_number}', [])
+        return Response({
+            'status': 'success',
+            'notifications': notifications
+        }, status=status.HTTP_200_OK)
