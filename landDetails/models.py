@@ -1,5 +1,5 @@
 from django.db import models
- 
+from users.models import CustomUser
 
 class LandDetails(models.Model):
     land_details_id = models.AutoField(primary_key=True)
@@ -17,6 +17,13 @@ class LandDetails(models.Model):
     location_name = models.CharField(max_length=20)
     latitude = models.FloatField()
     longitude = models.FloatField()
+    seller = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='land_as_seller'
+    )
     
 
     def __str__(self):
