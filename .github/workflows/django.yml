@@ -19,13 +19,7 @@ jobs:
         run: |
           git remote -v
           git remote add heroku https://git.heroku.com/shawazi.git || echo "Heroku remote already exists"
-
-      - name: Set Heroku buildpack
-        run: |
-          heroku buildpacks:set heroku/python -a shawazi
-        env:
-          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-
+   
       - name: Deploy to Heroku
         uses: akhileshns/heroku-deploy@v3.13.15
         with:
