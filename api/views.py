@@ -26,6 +26,9 @@ from django.contrib import messages
 from google.cloud import vision
 from google.oauth2 import service_account
 import json
+from django.core.cache import cache
+import uuid
+from datetime import datetime
 import os
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
@@ -55,6 +58,7 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 import pika
 import json
+
 import logging
 from chatroom.models import ChatRoom, ChatMessage
 from django.utils.timezone import now
@@ -861,3 +865,81 @@ def chat_room(request, room_name):
         'room_name': room_name,
         'users': users
     })
+
+
+
+class NotifySellerView(APIView):
+    def post(self, request, land_details_id):
+        land = get_object_or_404(LandDetails, land_details_id=land_details_id)
+
+        if land.interested:
+            return Response({
+                'status': 'error',
+                'message': 'This land is already under consideration by another buyer.'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        land.interested = True
+        land.save()
+
+        seller_name = land.owner_name  
+
+        notifications = cache.get(f'notifications_{seller_name}', [])
+        
+        notifications.append({
+            'id': str(uuid.uuid4()), 
+            'message': f"A buyer is interested in your land located at: {land.address}",
+            'created_at': timezone.now().isoformat(),
+        })
+
+        cache.set(f'notifications_{seller_name}', notifications)
+
+        return Response({
+            'status': 'success',
+            'message': 'Interest expressed successfully.',
+            'land_details': {
+                'land_details_id': land.land_details_id,
+                'address': land.address,
+                'location': land.location_name  
+            }
+        }, status=status.HTTP_201_CREATED)
+
+class AcceptInterestView(APIView):
+    def post(self, request):
+
+        land_details_id = request.data.get('land_details_id')
+        buyer_contact = request.data.get('buyer_contact')  
+
+        land = get_object_or_404(LandDetails, land_details_id=land_details_id)
+
+        if not land.interested:
+            return Response({
+                'status': 'error',
+                'message': 'No buyer has expressed interest in this land.'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        notifications = cache.get(f'notifications_{buyer_contact}', [])
+        
+        notifications.append({
+            'id': str(uuid.uuid4()), 
+            'message': f"Your interest in the land located at {land.address} has been accepted!",
+            'created_at': timezone.now().isoformat(),
+        })
+
+        cache.set(f'notifications_{buyer_contact}', notifications)
+
+        land.interested = False  
+        land.save()
+
+        return Response({
+            'status': 'success',
+            'message': 'Buyer interest has been accepted, and they have been notified.'
+        }, status=status.HTTP_200_OK)
+
+
+class GetNotificationsView(APIView):
+    def get(self, request, phone_number):
+        notifications = cache.get(f'notifications_{phone_number}', [])
+        return Response({
+            'status': 'success',
+            'notifications': notifications
+        }, status=status.HTTP_200_OK)
