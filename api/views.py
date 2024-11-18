@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from rest_framework.exceptions import NotFound
 from landDetails.models import LandDetails
 from transactions.models import Transactions
-from .serializers import AgreementsSerializer, BlockchainValidationSerializer, LandDetailSerializer,TransactionsSerializer
+from .serializers import AgreementSerializer, AgreementsSerializer, BlockchainValidationSerializer, LandDetailSerializer,TransactionsSerializer
 from landDetails.maps import LandMapSerializer
 from agreements.models import Agreements
 from rest_framework import status
@@ -155,9 +155,10 @@ def login_user(request):
             "message": "Login successful. OTP has been sent to your phone.",
             "first_name": user.first_name,
             "last_name": user.last_name,
+            "role": user.role, 
         }, status=status.HTTP_200_OK)
     else:
-        return Response({"message": "Incorrect password"}, status=status.HTTP_400_BAD_REQUEST)    
+        return Response({"message": "Incorrect password"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 
@@ -514,7 +515,6 @@ class LandMapDetailView(APIView):
         serializer = LandMapSerializer(land_detail, context={'request': request})
         return Response(serializer.data)
 
-
 class AgreementsView(APIView):
     def get(self, request):
         agreements = Agreements.objects.all()
@@ -529,7 +529,6 @@ class AgreementsView(APIView):
     def count(self, request):
         payment_count = Agreements.objects.count()
         return Response({"count": payment_count}, status=status.HTTP_200_OK)
-    
 class AgreementDetailView(APIView):
     def get_object(self, id):
         try:
@@ -555,25 +554,29 @@ class AgreementDetailView(APIView):
                 return Response({"error": "Only lawyers can update agreements"}, status=status.HTTP_403_FORBIDDEN)
         else:
             return Response({"error": "Agreement not found"}, status=status.HTTP_404_NOT_FOUND)
-
-
+    
+    def get(self, request, id):
+        try:
+            agreement = self.get_object(id)
+            serializer = AgreementSerializer(agreement)  
+            return Response(serializer.data)
+        except Agreements.DoesNotExist:
+            raise NotFound(detail="Agreement not found")
+    def get_object(self, id):
+        return Agreements.objects.get(agreement_id=id)  
 @api_view(['PATCH'])
 def update_agreement(request, agreement_id):
     try:
         agreement = Agreements.objects.get(agreement_id=agreement_id)
     except Agreements.DoesNotExist:
         return Response({"error": "Agreement not found"}, status=status.HTTP_404_NOT_FOUND)
-
     if 'buyer_agreed' in request.data:
         agreement.buyer_agreed = request.data['buyer_agreed']
     if 'seller_agreed' in request.data:
         agreement.seller_agreed = request.data['seller_agreed']
-
     agreement.save()
     serializer = AgreementsSerializer(agreement)
     return Response(serializer.data, status=status.HTTP_200_OK)
-
-
 
 class TransactionsListView(APIView):
     def get(self, request):
