@@ -43,6 +43,14 @@ urlpatterns = [
     path('notify-seller/<int:land_details_id>/', NotifySellerView.as_view(), name='notify-seller'),
     path('accept-interest/', AcceptInterestView.as_view(), name='accept-interest'),
     path('notifications/<phone_number>/', GetNotificationsView.as_view(), name='get_notifications'),
+    path('agreements/<int:agreement_id>/', update_agreement, name='update-agreement'),
+    path('agreements/<int:id>/', AgreementDetailView.as_view(), name='agreement_detail'),
+    path('agreements/<int:id>/', AgreementDetailView.as_view(), name='agreement_detail'),
+    path('agreements/<int:agreement_id>/update/', update_agreement, name='update-agreement'),
+
+    path('agreements/', AgreementsView.as_view(), name='agreements_list'),
+    path('agreements/<int:id>/', AgreementDetailView.as_view(), name='agreement_detail'),
+    path('agreements/<int:agreement_id>/update/', update_agreement, name='update-agreement'),
 
 ]
 
