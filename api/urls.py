@@ -45,8 +45,6 @@ urlpatterns = [
     path('notifications/<phone_number>/', GetNotificationsView.as_view(), name='get_notifications'),
     path('agreements/<int:agreement_id>/', update_agreement, name='update-agreement'),
     path('agreements/<int:agreement_id>/update/', update_agreement, name='update-agreement'),
-    path('agreements/', AgreementsView.as_view(), name='agreements_list'),
-    path('agreements/<int:id>/', AgreementDetailView.as_view(), name='agreement_detail'),
 
 ]
 
