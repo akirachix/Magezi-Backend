@@ -80,7 +80,7 @@ class LandDetailSerializer(serializers.ModelSerializer):
     land_history = serializers.SerializerMethodField()
     class Meta:
         model = LandDetails
-        fields = ['land_details_id','parcel_number','date_acquired','land_description','price','owner_name','previous_owner','national_id','address','date_sold','date_purchased','location_name','latitude','longitude','position','land_history',
+        fields = ['land_details_id','parcel_number','date_acquired','land_description','price','owner_name','previous_owner','national_id','address','date_sold','date_purchased','location_name','latitude','longitude','position','land_history','land_size','seller', 'length', 'width',
         ]
     def get_position(self, obj):
         """ Method to serialize latitude and longitude """
