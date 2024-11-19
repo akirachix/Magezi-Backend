@@ -24,7 +24,10 @@ class LandDetails(models.Model):
         blank=True,
         related_name='land_as_seller'
     )
-    
+    length = models.PositiveSmallIntegerField(blank=True, null=True)
+    width=models.PositiveSmallIntegerField(blank=True, null=True)
+    def land_size(self):
+        return f"{self.length}*{self.width}"
 
     def __str__(self):
         return f"{self.address} currently owned by {self.owner_name}"

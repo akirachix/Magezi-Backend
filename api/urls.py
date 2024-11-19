@@ -1,6 +1,6 @@
 from django.urls import path
 from agreements import views
-from .views import AgreementDetailView, Create_Room, RoomCreateView, Index_View, Login_View, Message_View,otp_verification, AgreementsView, CheckBlockchainView, LandListView,LandDetailView, LandMapDetailView, LandMapListView,  RegisteredUsersView,  TransactionsDetailView, TransactionsListView, UserProfileAPIView, forgot_password, login_user, logout_user, password_reset_confirm, reset_password, update_agreement, user_create, NotifySellerView, AcceptInterestView, GetNotificationsView
+from .views import AgreementDetailView, Create_Room, RoomCreateView, Index_View, Login_View, Message_View, otp_verification, AgreementsView, CheckBlockchainView, LandListView,LandDetailView, LandMapDetailView, LandMapListView,  RegisteredUsersView,  TransactionsDetailView, TransactionsListView, UserProfileAPIView, forgot_password, login_user, logout_user, password_reset_confirm, reset_password, update_agreement, user_create, NotifySellerView, AcceptInterestView, GetNotificationsView
 from api import views
 from.views import RoomCreateView
 from django.urls import path, re_path
@@ -8,9 +8,6 @@ from api.views import ChatMessageListCreateView, SendInvitationView, UserListVie
 from chatroom import consumers
 from api.views import chat_room
 from . import views
-
-
-
 urlpatterns = [
     path('register/', user_create, name='user_create'),
     path('login/', login_user, name='login_user'),
@@ -26,11 +23,11 @@ urlpatterns = [
     path('count/land-details/', LandListView.as_view(), name='land-detail-list'),
     path('land-detail/', LandDetailView.as_view(), name='land-detail-detail'),
     path('map-url/<int:pk>/', LandMapDetailView.as_view(), name='land-map-url'),
-    path('land-map/', LandMapListView.as_view({'get': 'list', 'post': 'create'}), name='land-map-view'), 
+    path('land-map/', LandMapListView.as_view({'get': 'list', 'post': 'create'}), name='land-map-view'),
     path('agreements/', AgreementsView.as_view(), name='agreements_list'),
     path('count/agreements/', AgreementsView.as_view(), name='agreements_list'),
-    path('agreements/<int:agreement_id>/', update_agreement, name='update-agreement'),
     path('agreements/<int:id>/', AgreementDetailView.as_view(), name='agreement_detail'),
+    path('api/agreements/<int:agreement_id>/', AgreementDetailView.as_view(), name='agreement-detail'),   
     path("transactions/",TransactionsListView.as_view(), name="transactions_list_view"),
     path("count/transactions/",TransactionsListView.as_view(), name="transactions_list_view"),
     path('check-blockchain/', CheckBlockchainView.as_view(), name='check_blockchain'),
@@ -46,11 +43,12 @@ urlpatterns = [
     path('notify-seller/<int:land_details_id>/', NotifySellerView.as_view(), name='notify-seller'),
     path('accept-interest/', AcceptInterestView.as_view(), name='accept-interest'),
     path('notifications/<phone_number>/', GetNotificationsView.as_view(), name='get_notifications'),
-    
 
-
-  
 ]
+
+
+
+
 
 websocket_urlpatterns = [
     re_path(r'ws/chat/(?P<user_id>\w+)/$', consumers.ChatConsumer.as_asgi()),
