@@ -64,6 +64,15 @@ from chatroom.models import ChatRoom, ChatMessage
 from django.utils.timezone import now
 from datetime import timedelta
 import requests
+from rest_framework import status, generics
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny  
+from rest_framework.exceptions import NotFound
+from rest_framework.decorators import api_view
+from agreements.models import Agreements
+from .serializers import AgreementsSerializer, AgreementSerializer
+
 
 def get_google_vision_client():
     google_credentials_json = settings.GOOGLE_VISION_CREDENTIALS
@@ -515,35 +524,48 @@ class LandMapDetailView(APIView):
         serializer = LandMapSerializer(land_detail, context={'request': request})
         return Response(serializer.data)
 
+
+
 class AgreementsView(APIView):
     def get(self, request):
         agreements = Agreements.objects.all()
         serializer = AgreementsSerializer(agreements, many=True)
         return Response(serializer.data)
+
     def post(self, request):
         serializer = AgreementsSerializer(data=request.data)
         if serializer.is_valid():
             agreement = serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     def count(self, request):
         payment_count = Agreements.objects.count()
         return Response({"count": payment_count}, status=status.HTTP_200_OK)
-class AgreementDetailView(APIView):
-    def get_object(self, id):
+
+class AgreementDetailView(generics.RetrieveUpdateAPIView):
+    queryset = Agreements.objects.all()
+    serializer_class = AgreementsSerializer
+    lookup_field = 'id'
+    permission_classes = [AllowAny]  # Ensure this import is added
+
+    def get_object(self, id=None):
         try:
-            return Agreements.objects.get(agreement_id=id)
+            return Agreements.objects.get(agreement_id=id or self.kwargs.get('id'))
         except Agreements.DoesNotExist:
-            return None
+            raise NotFound(detail="Agreement not found")
+
     def get(self, request, id):
-        agreement = self.get_object(id)
-        if agreement is not None:
+        try:
+            agreement = self.get_object(id)
             serializer = AgreementsSerializer(agreement)
             return Response(serializer.data)
-        return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        except NotFound:
+            return Response({"detail": "Agreement not found"}, status=status.HTTP_404_NOT_FOUND)
+
     def put(self, request, id):
-        agreement = self.get_object(id)
-        if agreement is not None:
+        try:
+            agreement = self.get_object(id)
             if hasattr(request.user, 'lawyer'):
                 serializer = AgreementsSerializer(agreement, data=request.data)
                 if serializer.is_valid():
@@ -552,31 +574,45 @@ class AgreementDetailView(APIView):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             else:
                 return Response({"error": "Only lawyers can update agreements"}, status=status.HTTP_403_FORBIDDEN)
-        else:
-            return Response({"error": "Agreement not found"}, status=status.HTTP_404_NOT_FOUND)
-    
-    def get(self, request, id):
-        try:
-            agreement = self.get_object(id)
-            serializer = AgreementSerializer(agreement)  
-            return Response(serializer.data)
         except Agreements.DoesNotExist:
-            raise NotFound(detail="Agreement not found")
-    def get_object(self, id):
-        return Agreements.objects.get(agreement_id=id)  
+            return Response({"error": "Agreement not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    def partial_update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object(kwargs.get('id'))
+        
+        # Explicitly handle buyer_agreed and seller_agreed
+        if 'buyer_agreed' in request.data:
+            instance.buyer_agreed = request.data['buyer_agreed']
+        if 'seller_agreed' in request.data:
+            instance.seller_agreed = request.data['seller_agreed']
+        
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        
+        return Response(serializer.data)
+
+# Optional standalone PATCH view if needed
 @api_view(['PATCH'])
 def update_agreement(request, agreement_id):
     try:
         agreement = Agreements.objects.get(agreement_id=agreement_id)
+        
+        if 'buyer_agreed' in request.data:
+            agreement.buyer_agreed = request.data['buyer_agreed']
+        if 'seller_agreed' in request.data:
+            agreement.seller_agreed = request.data['seller_agreed']
+        
+        agreement.save()
+        serializer = AgreementsSerializer(agreement)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     except Agreements.DoesNotExist:
         return Response({"error": "Agreement not found"}, status=status.HTTP_404_NOT_FOUND)
-    if 'buyer_agreed' in request.data:
-        agreement.buyer_agreed = request.data['buyer_agreed']
-    if 'seller_agreed' in request.data:
-        agreement.seller_agreed = request.data['seller_agreed']
-    agreement.save()
-    serializer = AgreementsSerializer(agreement)
-    return Response(serializer.data, status=status.HTTP_200_OK)
 
 class TransactionsListView(APIView):
     def get(self, request):
